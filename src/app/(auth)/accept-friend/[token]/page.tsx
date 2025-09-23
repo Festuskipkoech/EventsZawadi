@@ -1,29 +1,37 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { apiService } from '@/services/api'
 import { useAuth } from '@/context/AuthContext'
 import { getInitials } from '@/lib/utils'
 import Card from '@/components/Card'
 import Button from '@/components/Button'
-import { UserPlus, Users, CheckCircle, XCircle, Gift } from 'lucide-react'
+import { UserPlus, Users, CheckCircle, XCircle, Gift, Clock, AlertTriangle } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 interface RequesterInfo {
   name: string
   email: string
   friendCode: string
+  avatarUrl?: string
+}
+
+interface FriendRequestData {
+  requester: RequesterInfo
+  isValid: boolean
+  expiresAt: string
 }
 
 export default function AcceptFriendPage() {
   const params = useParams()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { isAuthenticated, isLoading: authLoading } = useAuth()
   const token = params?.token as string
 
-  const [requesterInfo, setRequesterInfo] = useState<RequesterInfo | null>(null)
+  const [requestData, setRequestData] = useState<FriendRequestData | null>(null)
   const [loading, setLoading] = useState(true)
   const [accepting, setAccepting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -33,19 +41,30 @@ export default function AcceptFriendPage() {
     if (!authLoading) {
       if (!isAuthenticated) {
         // Redirect to login with return URL
-        router.push(`/login?return=${encodeURIComponent(window.location.pathname)}`)
+        const returnUrl = encodeURIComponent(window.location.pathname + window.location.search)
+        router.push(`/login?return=${returnUrl}`)
         return
       }
-      loadRequesterInfo()
+      loadRequestInfo()
     }
   }, [isAuthenticated, authLoading, token])
 
-  const loadRequesterInfo = async () => {
+  const loadRequestInfo = async () => {
+    if (!token) {
+      setError('Invalid friend request link')
+      setLoading(false)
+      return
+    }
+
     try {
       setLoading(true)
-      // Call the API to get friend request info from token
-      const info = await apiService.getFriendRequestInfo(token)
-      setRequesterInfo(info.requester)
+      const data = await apiService.getFriendRequestInfo(token)
+      
+      if (!data.isValid) {
+        setError('This friend request link is invalid or has expired')
+      } else {
+        setRequestData(data)
+      }
     } catch (error: any) {
       setError(error.message || 'Invalid or expired friend request link')
     } finally {
@@ -54,16 +73,17 @@ export default function AcceptFriendPage() {
   }
 
   const handleAccept = async () => {
+    if (!token) return
+
     try {
       setAccepting(true)
       await apiService.acceptFriendRequestViaToken(token)
       
       setAccepted(true)
-      toast.success('Friend request accepted! 🎉')
       
       setTimeout(() => {
         router.push('/friends')
-      }, 2000)
+      }, 3000)
     } catch (error: any) {
       toast.error(error.message || 'Failed to accept friend request')
     } finally {
@@ -75,14 +95,41 @@ export default function AcceptFriendPage() {
     router.push('/friends')
   }
 
+  const getTimeRemaining = () => {
+    if (!requestData?.expiresAt) return null
+    
+    const now = new Date().getTime()
+    const expires = new Date(requestData.expiresAt).getTime()
+    const diff = expires - now
+    
+    if (diff <= 0) return 'Expired'
+    
+    const hours = Math.floor(diff / (1000 * 60 * 60))
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+    
+    if (hours > 24) {
+      const days = Math.floor(hours / 24)
+      return `${days} day${days > 1 ? 's' : ''} remaining`
+    }
+    
+    if (hours > 0) {
+      return `${hours}h ${minutes}m remaining`
+    }
+    
+    return `${minutes} minute${minutes > 1 ? 's' : ''} remaining`
+  }
+
   if (authLoading || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin-slow w-12 h-12 text-brand-500">
-          <svg className="w-full h-full" viewBox="0 0 24 24" fill="none">
-            <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" opacity="0.3" />
-            <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-          </svg>
+        <div className="text-center">
+          <div className="animate-spin-slow w-12 h-12 text-brand-500 mx-auto mb-4">
+            <svg className="w-full h-full" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" opacity="0.3" />
+              <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+          </div>
+          <p className="text-warm-600 font-medium">Loading friend request...</p>
         </div>
       </div>
     )
@@ -91,18 +138,29 @@ export default function AcceptFriendPage() {
   if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
-        <Card className="p-8 text-center max-w-md">
-          <XCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-lato font-bold text-warm-800 mb-4">
-            Invalid Link
-          </h2>
-          <p className="text-warm-600 mb-6">
-            {error}
-          </p>
-          <Button variant="primary" onClick={() => router.push('/friends')}>
-            Go to Friends
-          </Button>
-        </Card>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+        >
+          <Card className="p-8 text-center max-w-md">
+            <XCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+            <h2 className="text-2xl font-lato font-bold text-warm-800 mb-4">
+              {error.includes('expired') ? 'Link Expired' : 'Invalid Link'}
+            </h2>
+            <p className="text-warm-600 mb-6">
+              {error}
+            </p>
+            <div className="space-y-3">
+              <Button variant="primary" onClick={() => router.push('/friends')}>
+                Go to Friends
+              </Button>
+              <Button variant="outline" onClick={() => router.push('/friends')}>
+                Add Friends Manually
+              </Button>
+            </div>
+          </Card>
+        </motion.div>
       </div>
     )
   }
@@ -116,21 +174,33 @@ export default function AcceptFriendPage() {
           transition={{ type: 'spring', duration: 0.6 }}
         >
           <Card className="p-8 text-center max-w-md">
-            <CheckCircle className="w-16 h-16 text-nature-500 mx-auto mb-4" />
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.2, type: 'spring', duration: 0.4 }}
+            >
+              <CheckCircle className="w-16 h-16 text-nature-500 mx-auto mb-4" />
+            </motion.div>
             <h2 className="text-2xl font-lato font-bold text-warm-800 mb-4">
               Welcome to the Circle! 🎉
             </h2>
             <p className="text-warm-600 mb-6">
-              You're now connected with {requesterInfo?.name}. Start sharing the joy of gift-giving!
+              You're now connected with {requestData?.requester.name}. Start sharing the joy of gift-giving!
             </p>
-            <div className="text-sm text-warm-500">
-              Redirecting to friends page...
+            <div className="text-sm text-warm-500 flex items-center justify-center space-x-2">
+              <Clock className="w-4 h-4" />
+              <span>Redirecting to friends page...</span>
             </div>
           </Card>
         </motion.div>
       </div>
     )
   }
+
+  if (!requestData) return null
+
+  const timeRemaining = getTimeRemaining()
+  const isExpiring = timeRemaining?.includes('minute') || timeRemaining === 'Expired'
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
@@ -164,23 +234,45 @@ export default function AcceptFriendPage() {
             </p>
           </div>
 
-          {/* Requester Info */}
-          {requesterInfo && (
-            <div className="mb-8 p-6 bg-gradient-to-r from-brand-50 to-ocean-50 rounded-2xl border border-brand-200">
-              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-brand-400 to-ocean-400 flex items-center justify-center mx-auto mb-4 text-white font-bold text-xl">
-                {getInitials(requesterInfo.name)}
-              </div>
-              <h3 className="text-xl font-lato font-bold text-warm-800 mb-2">
-                {requesterInfo.name}
-              </h3>
-              <p className="text-warm-600 text-sm mb-1">
-                {requesterInfo.email}
-              </p>
-              <p className="text-warm-500 text-xs">
-                Friend Code: @{requesterInfo.friendCode}
-              </p>
+          {/* Expiry Warning */}
+          {timeRemaining && timeRemaining !== 'Expired' && (
+            <div className={`mb-6 p-3 rounded-xl border flex items-center space-x-2 ${
+              isExpiring 
+                ? 'bg-red-50 border-red-200 text-red-700' 
+                : 'bg-yellow-50 border-yellow-200 text-yellow-700'
+            }`}>
+              {isExpiring ? (
+                <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+              ) : (
+                <Clock className="w-4 h-4 flex-shrink-0" />
+              )}
+              <span className="text-sm font-medium">{timeRemaining}</span>
             </div>
           )}
+
+          {/* Requester Info */}
+          <div className="mb-8 p-6 bg-gradient-to-r from-brand-50 to-ocean-50 rounded-2xl border border-brand-200">
+            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-brand-400 to-ocean-400 flex items-center justify-center mx-auto mb-4 text-white font-bold text-xl shadow-lg">
+              {requestData.requester.avatarUrl ? (
+                <img 
+                  src={requestData.requester.avatarUrl} 
+                  alt={requestData.requester.name}
+                  className="w-full h-full rounded-full object-cover"
+                />
+              ) : (
+                getInitials(requestData.requester.name)
+              )}
+            </div>
+            <h3 className="text-xl font-lato font-bold text-warm-800 mb-2">
+              {requestData.requester.name}
+            </h3>
+            <p className="text-warm-600 text-sm mb-1">
+              {requestData.requester.email}
+            </p>
+            <p className="text-warm-500 text-xs">
+              Friend Code: @{requestData.requester.friendCode}
+            </p>
+          </div>
 
           {/* Actions */}
           <div className="space-y-4">
@@ -191,8 +283,9 @@ export default function AcceptFriendPage() {
               onClick={handleAccept}
               isLoading={accepting}
               leftIcon={<Users size={20} />}
+              disabled={timeRemaining === 'Expired'}
             >
-              Accept Friend Request
+              {timeRemaining === 'Expired' ? 'Request Expired' : 'Accept Friend Request'}
             </Button>
             
             <Button

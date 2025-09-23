@@ -61,7 +61,6 @@ interface WishlistData {
 export default function WishlistPage() {
   const params = useParams()
   const router = useRouter()
-  const { user } = useAuth()
   const eventId = params?.eventId as string
   
   const [wishlistData, setWishlistData] = useState<WishlistData | null>(null)
@@ -104,7 +103,7 @@ export default function WishlistPage() {
         itemUrl: newItem.itemUrl || undefined
       }
       
-      // await apiService.addWishlistItem(parseInt(eventId), itemData)
+      await apiService.addWishlistItem(parseInt(eventId), itemData)
       toast.success('Item added to wishlist! 🎁')
       setShowAddItemModal(false)
       setNewItem({ title: '', description: '', price: '', priority: 1, itemUrl: '' })
