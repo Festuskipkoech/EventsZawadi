@@ -80,6 +80,7 @@ export default function RegisterPage() {
     try {
       await register(formData.email, formData.password, formData.name)
     } catch (error) {
+        console.error("Error: ", error)
       // Error handled by auth context
     }
   }

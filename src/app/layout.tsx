@@ -19,12 +19,12 @@ const lato = Lato({
 })
 
 export const metadata: Metadata = {
-  title: 'GiftWish - Magical Gift Lists',
+  title: 'Events Zawadi - Magical Gift Lists',
   description: 'Create wishlists, connect with friends, and make gift-giving magical with GiftWish',
   keywords: 'wishlist, gifts, birthday, wedding, friends, gift list',
   authors: [{ name: 'GiftWish Team' }],
-  creator: 'GiftWish',
-  publisher: 'GiftWish',
+  creator: 'Events Zawadi',
+  publisher: 'Events Zawadi',
   robots: 'index, follow',
   openGraph: {
     title: 'GiftWish - Magical Gift Lists',

@@ -55,6 +55,7 @@ export default function LoginPage() {
     try {
       await login(formData.email, formData.password)
     } catch (error) {
+      console.error("Error: ", error)
       // Error handled by auth context
     }
   }

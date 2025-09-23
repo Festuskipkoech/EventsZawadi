@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '@/context/AuthContext'
 import { getInitials } from '@/lib/utils'
-import Button from '@/components/Button'
+import Image from 'next/image';
 import { 
   Gift, 
   Calendar, 
@@ -26,7 +26,7 @@ export default function Navbar() {
   const pathname = usePathname()
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const [notificationCount] = useState(3) // This would come from API
+  const [notificationCount] = useState(3) 
   const profileMenuRef = useRef<HTMLDivElement>(null)
 
   // Close profile menu when clicking outside
@@ -133,7 +133,7 @@ export default function Navbar() {
                 >
                   <div className="w-8 h-8 rounded-full bg-gradient-to-br from-brand-400 to-ocean-400 flex items-center justify-center text-white font-bold text-sm shadow-lg">
                     {user.avatarUrl ? (
-                      <img 
+                      <Image 
                         src={user.avatarUrl} 
                         alt={user.name}
                         className="w-full h-full rounded-full object-cover"
@@ -173,7 +173,7 @@ export default function Navbar() {
                         <div className="flex items-center space-x-3">
                           <div className="w-12 h-12 rounded-full bg-gradient-to-br from-brand-400 to-ocean-400 flex items-center justify-center text-white font-bold shadow-lg">
                             {user.avatarUrl ? (
-                              <img 
+                              <Image
                                 src={user.avatarUrl} 
                                 alt={user.name}
                                 className="w-full h-full rounded-full object-cover"

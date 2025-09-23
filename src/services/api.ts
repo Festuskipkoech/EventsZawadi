@@ -3,16 +3,6 @@ import { CONSTANTS } from '@/lib/utils'
 import toast from 'react-hot-toast'
 
 // Types
-interface ApiResponse<T = any> {
-  success: boolean
-  data?: T
-  message?: string
-  error?: {
-    message: string
-    code: string
-  }
-}
-
 interface User {
   id: number
   email: string
@@ -203,7 +193,7 @@ class ApiService {
         return config
       },
       (error) => {
-        console.error('❌ Request Error:', error)
+        console.error('Request Error:', error)
         return Promise.reject(error)
       }
     )
@@ -212,7 +202,7 @@ class ApiService {
     this.api.interceptors.response.use(
       (response: AxiosResponse) => {
         if (process.env.NODE_ENV === 'development') {
-          console.log(`✅ API Response: ${response.config.method?.toUpperCase()} ${response.config.url}`, response.data)
+          console.log(`API Response: ${response.config.method?.toUpperCase()} ${response.config.url}`, response.data)
         }
         return response
       },
@@ -255,7 +245,7 @@ class ApiService {
           }
         }
 
-        console.error('❌ API Error:', error.response?.data || error.message)
+        console.error(' API Error:', error.response?.data || error.message)
         return Promise.reject(error)
       }
     )
@@ -341,7 +331,7 @@ class ApiService {
     }
   }
 
-  // ============ AUTH ENDPOINTS ============
+  // Auth endpoints
   async login(email: string, password: string): Promise<AuthResponse> {
     const response = await this.request<{ user: User; token: string; refreshToken: string }>(
       'post', 
@@ -414,7 +404,7 @@ class ApiService {
     window.location.href = '/'
   }
 
-  // ============ EVENTS ENDPOINTS ============
+  // Events endpoint
   async getMyEvents(): Promise<Event[]> {
     return this.request<Event[]>('get', '/events/mine')
   }
@@ -444,7 +434,7 @@ class ApiService {
     toast.success('Event deleted! 🗑️')
   }
 
-  // ============ WISHLIST ENDPOINTS ============
+  // Wishlist endpoint
   async getWishlist(eventId: number): Promise<WishlistData> {
     return this.request<WishlistData>('get', `/events/${eventId}/wishlist`)
   }
@@ -466,7 +456,7 @@ class ApiService {
     toast.success('Item removed from wishlist! 🗑️')
   }
 
-  // ============ FRIENDS ENDPOINTS ============
+  // Friends endpoints
   async getFriends(): Promise<Friend[]> {
     return this.request<Friend[]>('get', '/friends')
   }
@@ -495,7 +485,7 @@ class ApiService {
     toast.success('Friend removed')
   }
 
-  // ============ FRIEND LINK ENDPOINTS ============
+  // Friends link endpoint
   async generateFriendLink(expiresInHours: number = 168): Promise<{ shareableLink: string; token: string }> {
     return this.request<{ shareableLink: string; token: string }>('post', '/friends/generate-link', { expiresInHours })
   }
@@ -509,7 +499,7 @@ class ApiService {
     toast.success('Friend request accepted! 🤝')
   }
 
-  // ============ GIFTS ENDPOINTS ============
+  // Gifts endpoints
   async pledgeGift(itemId: number, message?: string): Promise<void> {
     await this.request('post', `/gifts/pledge`, { itemId, message })
     toast.success('Gift pledged! 🎁')
@@ -542,7 +532,7 @@ class ApiService {
     return this.request<Gift[]>('get', '/gifts/pledges')
   }
 
-  // ============ DASHBOARD ENDPOINTS ============
+  // Dashboard endpoints
   async getDashboardStats(): Promise<{
     upcomingEvents: number
     totalFriends: number
@@ -558,7 +548,7 @@ class ApiService {
     return this.request('get', '/dashboard/stats')
   }
 
-  // ============ NOTIFICATIONS ENDPOINTS ============
+  // Notifications endpoints
   async getNotifications(): Promise<Array<{
     id: number
     type: string
@@ -579,7 +569,7 @@ class ApiService {
     await this.request('put', '/notifications/read-all')
   }
 
-  // ============ FILE UPLOAD ENDPOINTS ============
+  // File upload logic
   async uploadFile(file: File, type: 'avatar' | 'gift_image' | 'event_cover'): Promise<{ url: string }> {
     const formData = new FormData()
     formData.append('file', file)
@@ -592,7 +582,7 @@ class ApiService {
     })
   }
 
-  // ============ UTILITY METHODS ============
+  // Utility functions
   async checkHealth(): Promise<{ status: string; timestamp: string }> {
     return this.request('get', '/health')
   }

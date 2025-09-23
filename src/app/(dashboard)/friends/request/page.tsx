@@ -73,7 +73,7 @@ export default function FriendRequestsPage() {
   const handleDeclineRequest = async (requestId: number) => {
     try {
       setProcessingIds(prev => new Set([...prev, requestId]))
-      // await apiService.declineFriendRequest(requestId)
+      await apiService.declineFriendRequest(requestId)
       await loadRequests()
       toast.success('Friend request declined')
     } catch (error: any) {

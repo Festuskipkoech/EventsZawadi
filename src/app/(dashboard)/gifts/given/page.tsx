@@ -47,7 +47,7 @@ export default function GivenGiftsPage() {
   const handleMarkAsPurchased = async (giftId: number) => {
     try {
       setProcessingIds(prev => new Set([...prev, giftId]))
-      // await apiService.markGiftAsPurchased(giftId)
+      await apiService.markGiftAsPurchased(giftId)
       toast.success('Gift marked as purchased! 📦')
       await loadGivenGifts()
     } catch (error: any) {

@@ -1,16 +1,15 @@
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
 
-/**
- * Utility function to merge Tailwind CSS classes
- */
+//  Utility function to merge Tailwind CSS classes
+ 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-/**
- * Format currency values
- */
+
+// Format currency values
+
 export function formatCurrency(amount: number, currency = 'USD'): string {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -20,9 +19,7 @@ export function formatCurrency(amount: number, currency = 'USD'): string {
   }).format(amount)
 }
 
-/**
- * Format dates in a human-readable way
- */
+//  Format dates in a human-readable way
 export function formatDate(date: string | Date, options?: Intl.DateTimeFormatOptions): string {
   const dateObj = typeof date === 'string' ? new Date(date) : date
   
@@ -35,9 +32,8 @@ export function formatDate(date: string | Date, options?: Intl.DateTimeFormatOpt
   return new Intl.DateTimeFormat('en-US', options || defaultOptions).format(dateObj)
 }
 
-/**
- * Get relative time string (e.g., "2 days ago", "in 5 days")
- */
+
+//  Get relative time string (e.g., "2 days ago", "in 5 days")
 export function getRelativeTime(date: string | Date): string {
   const dateObj = typeof date === 'string' ? new Date(date) : date
   const now = new Date()
@@ -51,9 +47,9 @@ export function getRelativeTime(date: string | Date): string {
   return `${Math.abs(diffInDays)} days ago`
 }
 
-/**
- * Calculate days until a date
- */
+
+// Calculate days until a date
+
 export function getDaysUntil(date: string | Date): number {
   const dateObj = typeof date === 'string' ? new Date(date) : date
   const now = new Date()
@@ -61,24 +57,22 @@ export function getDaysUntil(date: string | Date): number {
   return Math.ceil(diffInMs / (1000 * 60 * 60 * 24))
 }
 
-/**
- * Truncate text with ellipsis
- */
+// Truncate text with ellipsis
+
 export function truncateText(text: string, maxLength: number): string {
   if (text.length <= maxLength) return text
   return text.slice(0, maxLength) + '...'
 }
 
-/**
- * Generate random ID
- */
+
+// Generate random ID
+
 export function generateId(): string {
   return Math.random().toString(36).substr(2, 9)
 }
 
-/**
- * Generate secure friend code
- */
+// Generate secure friend code
+
 export function generateFriendCode(): string {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
   let result = ''
@@ -88,9 +82,9 @@ export function generateFriendCode(): string {
   return result
 }
 
-/**
- * Debounce function
- */
+
+// Debounce function
+
 export function debounce<T extends (...args: any[]) => any>(
   func: T,
   wait: number
@@ -102,10 +96,8 @@ export function debounce<T extends (...args: any[]) => any>(
     timeout = setTimeout(() => func(...args), wait)
   }
 }
+// Throttle function
 
-/**
- * Throttle function
- */
 export function throttle<T extends (...args: any[]) => any>(
   func: T,
   wait: number
@@ -121,9 +113,9 @@ export function throttle<T extends (...args: any[]) => any>(
   }
 }
 
-/**
- * Deep clone object
- */
+
+// Deep clone object
+
 export function deepClone<T>(obj: T): T {
   if (obj === null || typeof obj !== 'object') return obj
   if (obj instanceof Date) return new Date(obj.getTime()) as T
@@ -138,17 +130,14 @@ export function deepClone<T>(obj: T): T {
   return cloned
 }
 
-/**
- * Validate email format
- */
+// Validate email format
 export function isValidEmail(email: string): boolean {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
   return emailRegex.test(email)
 }
 
-/**
- * Validate password strength
- */
+
+// Validate password strength
 export function validatePassword(password: string): {
   isValid: boolean
   errors: string[]
@@ -190,16 +179,14 @@ export function validatePassword(password: string): {
   }
 }
 
-/**
- * Generate avatar URL using DiceBear
- */
+
+// Generate avatar URL using DiceBear
 export function generateAvatarUrl(seed: string, style: 'avataaars' | 'personas' | 'lorelei' = 'personas'): string {
   return `https://api.dicebear.com/7.x/${style}/svg?seed=${encodeURIComponent(seed)}&backgroundColor=f97316,06b6d4,84cc16`
 }
 
-/**
- * Get initials from name
- */
+
+// Get initials from name
 export function getInitials(name: string): string {
   return name
     .split(' ')
@@ -208,9 +195,8 @@ export function getInitials(name: string): string {
     .join('')
 }
 
-/**
- * Format file size
- */
+// Format file size
+
 export function formatFileSize(bytes: number): string {
   if (bytes === 0) return '0 Bytes'
   
@@ -221,23 +207,19 @@ export function formatFileSize(bytes: number): string {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
 }
 
-/**
- * Sleep utility for async operations
- */
+
+// Sleep utility for async operations
 export function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms))
 }
 
-/**
- * Format friend code with spaces
- */
+// Format friend code with spaces
 export function formatFriendCode(code: string): string {
   return code.replace(/(.{4})/g, '$1 ').trim()
 }
 
-/**
- * Check if date is today
- */
+// Check if date is today
+
 export function isToday(date: string | Date): boolean {
   const today = new Date()
   const checkDate = typeof date === 'string' ? new Date(date) : date
@@ -245,9 +227,8 @@ export function isToday(date: string | Date): boolean {
   return today.toDateString() === checkDate.toDateString()
 }
 
-/**
- * Check if date is this week
- */
+// Check if date is this week
+
 export function isThisWeek(date: string | Date): boolean {
   const today = new Date()
   const checkDate = typeof date === 'string' ? new Date(date) : date
@@ -262,9 +243,9 @@ export function isThisWeek(date: string | Date): boolean {
  * Constants for the application
  */
 export const CONSTANTS = {
-  API_BASE_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api',
-  SOCKET_URL: process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:5000',
-  APP_NAME: process.env.NEXT_PUBLIC_APP_NAME || 'GiftWish',
+  API_BASE_URL: process.env.NEXT_PUBLIC_API_URL,
+  SOCKET_URL: process.env.NEXT_PUBLIC_SOCKET_URL,
+  APP_NAME: process.env.NEXT_PUBLIC_APP_NAME,
   
   // Local storage keys
   STORAGE_KEYS: {

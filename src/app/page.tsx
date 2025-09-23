@@ -62,7 +62,7 @@ export default function HomePage() {
               <Gift className="w-7 h-7 text-white" />
             </div>
             <h1 className="text-3xl font-lato font-black text-gradient-brand">
-              GiftWish
+              Events Zawadi
             </h1>
           </motion.div>
 
@@ -230,11 +230,10 @@ export default function HomePage() {
               <div className="w-10 h-10 bg-gradient-to-br from-brand-500 to-brand-600 rounded-2xl flex items-center justify-center transform -rotate-12">
                 <Gift className="w-5 h-5 text-white" />
               </div>
-              <span className="text-2xl font-lato font-black">GiftWish</span>
+              <span className="text-2xl font-lato font-black">Events Zawadi</span>
             </div>
             <p className="text-warm-300 font-inter">
-              © 2025 GiftWish. Made with ❤️ for magical gift-giving.
-            </p>
+              © 2025 Events Zawadi</p>
           </div>
         </footer>
       </div>

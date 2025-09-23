@@ -10,7 +10,6 @@ import Button from '@/components/Button'
 import { 
   Calendar, 
   Plus, 
-  Clock,
   Gift,
   Users,
   Edit3,

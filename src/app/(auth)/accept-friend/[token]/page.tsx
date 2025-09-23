@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { useParams, useRouter, useSearchParams } from 'next/navigation'
+import { useParams, useRouter} from 'next/navigation'
 import { motion } from 'framer-motion'
 import { apiService } from '@/services/api'
 import { useAuth } from '@/context/AuthContext'
@@ -10,6 +10,8 @@ import Card from '@/components/Card'
 import Button from '@/components/Button'
 import { UserPlus, Users, CheckCircle, XCircle, Gift, Clock, AlertTriangle } from 'lucide-react'
 import toast from 'react-hot-toast'
+import Image from 'next/image';
+
 
 interface RequesterInfo {
   name: string
@@ -27,7 +29,6 @@ interface FriendRequestData {
 export default function AcceptFriendPage() {
   const params = useParams()
   const router = useRouter()
-  const searchParams = useSearchParams()
   const { isAuthenticated, isLoading: authLoading } = useAuth()
   const token = params?.token as string
 
@@ -61,7 +62,7 @@ export default function AcceptFriendPage() {
       const data = await apiService.getFriendRequestInfo(token)
       
       if (!data.isValid) {
-        setError('This friend request link is invalid or has expired')
+        setError('This friend request link is invalid or has expired, request for another one or hare with the your code')
       } else {
         setRequestData(data)
       }
@@ -254,7 +255,7 @@ export default function AcceptFriendPage() {
           <div className="mb-8 p-6 bg-gradient-to-r from-brand-50 to-ocean-50 rounded-2xl border border-brand-200">
             <div className="w-16 h-16 rounded-full bg-gradient-to-br from-brand-400 to-ocean-400 flex items-center justify-center mx-auto mb-4 text-white font-bold text-xl shadow-lg">
               {requestData.requester.avatarUrl ? (
-                <img 
+                <Image 
                   src={requestData.requester.avatarUrl} 
                   alt={requestData.requester.name}
                   className="w-full h-full rounded-full object-cover"

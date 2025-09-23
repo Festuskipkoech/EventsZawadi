@@ -22,6 +22,7 @@ import {
   Bell
 } from 'lucide-react'
 import toast from 'react-hot-toast'
+import Image from 'next/image';
 
 export default function ProfilePage() {
   const { user, refreshUser } = useAuth()
@@ -91,7 +92,7 @@ export default function ProfilePage() {
               <div className="relative inline-block">
                 <div className="w-24 h-24 rounded-full bg-gradient-to-br from-brand-400 to-ocean-400 flex items-center justify-center mx-auto mb-4 text-white font-bold text-3xl shadow-xl">
                   {user.avatarUrl ? (
-                    <img 
+                    <Image 
                       src={user.avatarUrl} 
                       alt={user.name}
                       className="w-full h-full rounded-full object-cover"

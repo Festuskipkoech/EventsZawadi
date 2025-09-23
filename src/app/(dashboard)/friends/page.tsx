@@ -3,7 +3,7 @@
   import React, { useState, useEffect } from 'react'
   import { motion, AnimatePresence } from 'framer-motion'
   import { apiService, Friend } from '@/services/api'
-  import { getInitials, generateAvatarUrl } from '@/lib/utils'
+  import { getInitials } from '@/lib/utils'
   import Card from '@/components/Card'
   import Button from '@/components/Button'
   import Input from '@/components/Input'
@@ -20,6 +20,7 @@
     Calendar
   } from 'lucide-react'
   import toast from 'react-hot-toast'
+import Image from 'next/image';
 
   export default function FriendsPage() {
     const [friends, setFriends] = useState<Friend[]>([])
@@ -234,7 +235,7 @@
                 <Card className="p-6 text-center hover:scale-105 transition-all duration-300">
                   <div className="w-16 h-16 rounded-full bg-gradient-to-br from-brand-400 to-ocean-400 flex items-center justify-center mx-auto mb-4 text-white font-bold text-xl shadow-lg">
                     {friend.avatarUrl ? (
-                      <img 
+                      <Image
                         src={friend.avatarUrl} 
                         alt={friend.name}
                         className="w-full h-full rounded-full object-cover"
