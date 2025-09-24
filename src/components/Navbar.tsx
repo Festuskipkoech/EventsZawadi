@@ -77,7 +77,7 @@ export default function Navbar() {
                 <Gift className="w-6 h-6 text-white" />
               </motion.div>
               <span className="text-2xl font-lato font-black text-warm-800 group-hover:text-brand-600 transition-colors">
-                GiftWish
+                Events Zawadi
               </span>
             </Link>
 

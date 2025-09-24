@@ -65,9 +65,9 @@ export default function DashboardPage() {
 
       // Mock recent activity (in real app, this would come from API)
       setRecentActivity([
-        { type: 'gift_pledged', message: 'Someone pledged a gift for your birthday!', time: '2 hours ago', icon: '🎁' },
-        { type: 'friend_added', message: 'Sarah Johnson joined your friend circle', time: '1 day ago', icon: '👋' },
-        { type: 'event_created', message: 'You created "Wedding Anniversary" event', time: '3 days ago', icon: '🎉' },
+        // { type: 'gift_pledged', message: 'Someone pledged a gift for your birthday!', time: '2 hours ago', icon: '🎁' },
+        // { type: 'friend_added', message: 'Sarah Johnson joined your friend circle', time: '1 day ago', icon: '👋' },
+        // { type: 'event_created', message: 'You created "Wedding Anniversary" event', time: '3 days ago', icon: '🎉' },
       ])
 
     } catch (error) {

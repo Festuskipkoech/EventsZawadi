@@ -435,15 +435,17 @@ class ApiService {
   }
 
   // Wishlist endpoint
-  async getWishlist(eventId: number): Promise<WishlistData> {
-    return this.request<WishlistData>('get', `/events/${eventId}/wishlist`)
-  }
 
-  async addWishlistItem(eventId: number, itemData: CreateWishlistItemData): Promise<WishlistItem> {
-    const response = await this.request<WishlistItem>('post', `/events/${eventId}/wishlist/items`, itemData)
-    toast.success('Item added to wishlist! 🎁')
-    return response
-  }
+async getWishlist(eventId: number): Promise<WishlistData> {
+  return this.request<WishlistData>('get', `/gifts/wishlist/${eventId}`)
+}
+
+
+async addWishlistItem(eventId: number, itemData: CreateWishlistItemData): Promise<WishlistItem> {
+  const response = await this.request<WishlistItem>('post', `/events/${eventId}/wishlist`, itemData)
+  toast.success('Item added to wishlist! 🎁')
+  return response
+}
 
   async updateWishlistItem(itemId: number, itemData: Partial<CreateWishlistItemData>): Promise<WishlistItem> {
     const response = await this.request<WishlistItem>('put', `/wishlist/items/${itemId}`, itemData)
