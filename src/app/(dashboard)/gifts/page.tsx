@@ -171,84 +171,142 @@ export default function GiftsPage() {
   }
 
   const currentGifts = activeTab === 'received' ? receivedGifts : givenGifts
+  const currentStats = activeTab === 'received' 
+    ? {
+        total: receivedGifts.length,
+        revealed: receivedGifts.filter(g => g.event && new Date(g.event.date) < new Date()).length,
+        awaiting: receivedGifts.filter(g => g.event && new Date(g.event.date) >= new Date()).length
+      }
+    : {
+        total: givenGifts.length,
+        pledged: givenGifts.filter(g => g.status === 'pledged').length,
+        purchased: givenGifts.filter(g => g.status === 'purchased' || g.status === 'delivered').length
+      }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Header with integrated tabs */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-center md:text-left"
+        className="flex flex-col md:flex-row md:items-center md:justify-between"
       >
-        <h1 className="text-3xl font-lato font-black text-warm-800 mb-2">
-          Gifts 🎁
-        </h1>
-        <p className="text-warm-600">
-          Track gifts you've given and the wonderful surprises you've received
-        </p>
+        <div>
+          <h1 className="text-3xl font-lato font-black text-warm-800 mb-2">
+            Gifts 🎁
+          </h1>
+          <p className="text-warm-600">
+            Track gifts you've given and the wonderful surprises you've received
+          </p>
+        </div>
+
+        {/* Header Tabs */}
+        <div className="mt-4 md:mt-0">
+          <div className="flex bg-white/50 backdrop-blur-sm rounded-2xl p-1 border border-warm-200">
+            {[
+              { key: 'received', label: 'Received', icon: Heart },
+              { key: 'given', label: 'Given', icon: GiftIcon }
+            ].map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key as 'received' | 'given')}
+                className={`flex items-center space-x-2 px-4 py-2 rounded-xl font-inter font-semibold text-sm transition-all duration-200 ${
+                  activeTab === tab.key
+                    ? 'bg-gradient-to-r from-brand-500 to-brand-600 text-white shadow-md'
+                    : 'text-warm-700 hover:text-brand-600 hover:bg-white/70'
+                }`}
+              >
+                <tab.icon size={16} />
+                <span>{tab.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
       </motion.div>
 
-      {/* Tabs */}
-      <div className="flex justify-center">
-        <div className="bg-white/70 backdrop-blur-sm rounded-3xl p-2 border-2 border-brand-200 shadow-lg">
-          {[
-            { key: 'received', label: 'Received', icon: Heart },
-            { key: 'given', label: 'Given', icon: GiftIcon }
-          ].map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key as 'received' | 'given')}
-              className={`flex items-center space-x-2 px-6 py-3 rounded-2xl font-inter font-semibold transition-all duration-200 ${
-                activeTab === tab.key
-                  ? 'bg-gradient-to-r from-brand-500 to-brand-600 text-white shadow-xl transform scale-105'
-                  : 'text-warm-700 hover:text-brand-600 hover:bg-brand-50'
-              }`}
-            >
-              <tab.icon size={18} />
-              <span>{tab.label}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="p-6 text-center">
-          <div className="w-12 h-12 bg-gradient-to-br from-nature-500 to-nature-600 rounded-2xl flex items-center justify-center mx-auto mb-3">
-            <Heart className="w-6 h-6 text-white" />
-          </div>
-          <h3 className="text-2xl font-lato font-black text-warm-800">
-            {receivedGifts.length}
-          </h3>
-          <p className="text-sm text-warm-600 font-medium">Gifts Received</p>
-        </Card>
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={activeTab}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          transition={{ duration: 0.2 }}
+          className="grid grid-cols-1 md:grid-cols-3 gap-6"
+        >
+          {activeTab === 'received' ? (
+            <>
+              <Card className="p-6 text-center">
+                <div className="w-12 h-12 bg-gradient-to-br from-nature-500 to-nature-600 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                  <Heart className="w-6 h-6 text-white" />
+                </div>
+                <h3 className="text-2xl font-lato font-black text-warm-800">
+                  {currentStats.total}
+                </h3>
+                <p className="text-sm text-warm-600 font-medium">Total Received</p>
+              </Card>
 
-        <Card className="p-6 text-center">
-          <div className="w-12 h-12 bg-gradient-to-br from-brand-500 to-brand-600 rounded-2xl flex items-center justify-center mx-auto mb-3">
-            <GiftIcon className="w-6 h-6 text-white" />
-          </div>
-          <h3 className="text-2xl font-lato font-black text-warm-800">
-            {givenGifts.length}
-          </h3>
-          <p className="text-sm text-warm-600 font-medium">Gifts Given</p>
-        </Card>
+              <Card className="p-6 text-center">
+                <div className="w-12 h-12 bg-gradient-to-br from-brand-500 to-brand-600 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                  <Sparkles className="w-6 h-6 text-white" />
+                </div>
+                <h3 className="text-2xl font-lato font-black text-warm-800">
+                  {currentStats.revealed}
+                </h3>
+                <p className="text-sm text-warm-600 font-medium">Surprises Revealed</p>
+              </Card>
 
-        <Card className="p-6 text-center">
-          <div className="w-12 h-12 bg-gradient-to-br from-ocean-500 to-ocean-600 rounded-2xl flex items-center justify-center mx-auto mb-3">
-            <Sparkles className="w-6 h-6 text-white" />
-          </div>
-          <h3 className="text-2xl font-lato font-black text-warm-800">
-            {receivedGifts.length + givenGifts.length}
-          </h3>
-          <p className="text-sm text-warm-600 font-medium">Total Joy Shared</p>
-        </Card>
-      </div>
+              <Card className="p-6 text-center">
+                <div className="w-12 h-12 bg-gradient-to-br from-ocean-500 to-ocean-600 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                  <Package className="w-6 h-6 text-white" />
+                </div>
+                <h3 className="text-2xl font-lato font-black text-warm-800">
+                  {currentStats.awaiting}
+                </h3>
+                <p className="text-sm text-warm-600 font-medium">Awaiting Surprise</p>
+              </Card>
+            </>
+          ) : (
+            <>
+              <Card className="p-6 text-center">
+                <div className="w-12 h-12 bg-gradient-to-br from-brand-500 to-brand-600 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                  <GiftIcon className="w-6 h-6 text-white" />
+                </div>
+                <h3 className="text-2xl font-lato font-black text-warm-800">
+                  {currentStats.total}
+                </h3>
+                <p className="text-sm text-warm-600 font-medium">Total Given</p>
+              </Card>
+
+              <Card className="p-6 text-center">
+                <div className="w-12 h-12 bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                  <Heart className="w-6 h-6 text-white" />
+                </div>
+                <h3 className="text-2xl font-lato font-black text-warm-800">
+                  {currentStats.pledged}
+                </h3>
+                <p className="text-sm text-warm-600 font-medium">Pledged</p>
+              </Card>
+
+              <Card className="p-6 text-center">
+                <div className="w-12 h-12 bg-gradient-to-br from-nature-500 to-nature-600 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                  <Package className="w-6 h-6 text-white" />
+                </div>
+                <h3 className="text-2xl font-lato font-black text-warm-800">
+                  {currentStats.purchased}
+                </h3>
+                <p className="text-sm text-warm-600 font-medium">Purchased</p>
+              </Card>
+            </>
+          )}
+        </motion.div>
+      </AnimatePresence>
 
       {/* Gifts List */}
       <AnimatePresence mode="wait">
         {currentGifts.length === 0 ? (
           <motion.div
-            key="empty"
+            key={`empty-${activeTab}`}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -274,7 +332,7 @@ export default function GiftsPage() {
           </motion.div>
         ) : (
           <motion.div
-            key="gifts-list"
+            key={`gifts-${activeTab}`}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}

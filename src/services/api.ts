@@ -1,8 +1,10 @@
+// services/apiService.ts
 import axios, { AxiosInstance, AxiosResponse, AxiosError } from 'axios'
 import { CONSTANTS } from '@/lib/utils'
 import toast from 'react-hot-toast'
+import { notificationService, Notification, NotificationListener } from './notificationService'
 
-// Types
+// Types - Updated to match actual backend responses
 interface User {
   id: number
   email: string
@@ -10,13 +12,11 @@ interface User {
   friendCode: string
   avatarUrl?: string
   createdAt: string
-  updatedAt: string
 }
 
 interface AuthResponse {
   user: User
   token: string
-  refreshToken: string
 }
 
 interface Event {
@@ -29,11 +29,11 @@ interface Event {
   wishlistItemsCount: number
   giftsReceivedCount?: number
   createdAt: string
-  updatedAt: string
-  ownerId: number
-  ownerName?: string
-  isOwnEvent?: boolean
-  hasEventPassed?: boolean
+  updatedAt?: string
+  owner?: {
+    name: string
+    email: string
+  }
 }
 
 interface WishlistItem {
@@ -44,26 +44,33 @@ interface WishlistItem {
   priority: number
   itemUrl?: string
   isPledged: boolean
-  hasGift: boolean
-  isRevealed: boolean
+  hasGift?: boolean
+  giftCount?: number
   createdAt: string
-  updatedAt: string
-  eventId: number
-  pledgedBy?: {
-    id: number
-    name: string
-  }
   gift?: {
     id: number
     giverName: string
     message?: string
-    hasImage: boolean
+    imageBase64?: string
     purchasedAt: string
+  }
+  myPledge?: {
+    id: number
+    status: string
+    pledgedAt: string
+    purchasedAt?: string
   }
 }
 
 interface WishlistData {
-  event: Event
+  event: {
+    id: number
+    title: string
+    eventDate: string
+    ownerName: string
+    isOwnEvent: boolean
+    hasEventPassed: boolean
+  }
   items: WishlistItem[]
 }
 
@@ -74,8 +81,6 @@ interface Friend {
   friendCode: string
   avatarUrl?: string
   friendshipDate: string
-  status: 'active' | 'blocked'
-  upcomingEventsCount: number
 }
 
 interface FriendRequest {
@@ -86,46 +91,33 @@ interface FriendRequest {
     email: string
     friendCode: string
   }
-  recipient: {
-    id: number
-    name: string
-    email: string
-  }
   status: 'pending' | 'accepted' | 'declined'
-  message?: string
   createdAt: string
-  token?: string
 }
 
 interface Gift {
   id: number
-  status: 'pledged' | 'purchased' | 'delivered'
+  status: 'pledged' | 'purchased'
   message?: string
   hasImage: boolean
+  hasMessage?: boolean
   pledgedAt: string
   purchasedAt?: string
-  deliveredAt?: string
   item: {
-    id: number
     title: string
     description?: string
-    price?: number
   }
   event: {
     id: number
     title: string
     date: string
-    eventType: string
+    hasPassed?: boolean
   }
-  recipient: {
-    id: number
+  recipient?: {
     name: string
-    email: string
   }
-  giver: {
-    id: number
+  giver?: {
     name: string
-    email: string
   }
 }
 
@@ -144,16 +136,10 @@ interface CreateWishlistItemData {
   itemUrl?: string
 }
 
-interface UpdateProfileData {
-  name?: string
-  email?: string
-  avatarUrl?: string
-}
-
 class ApiService {
   private api: AxiosInstance
   private token: string | null = null
-  private refreshToken: string | null = null
+  private currentUser: User | null = null
 
   constructor() {
     this.api = axios.create({
@@ -164,12 +150,22 @@ class ApiService {
       },
     })
 
-    // Load tokens from localStorage
+    // Load token from localStorage and restore user
     if (typeof window !== 'undefined') {
       this.token = localStorage.getItem(CONSTANTS.STORAGE_KEYS.AUTH_TOKEN)
-      this.refreshToken = localStorage.getItem(CONSTANTS.STORAGE_KEYS.REFRESH_TOKEN)
-      if (this.token) {
-        this.setAuthHeader(this.token)
+      const userData = localStorage.getItem(CONSTANTS.STORAGE_KEYS.USER_DATA)
+      
+      if (this.token && userData) {
+        try {
+          this.currentUser = JSON.parse(userData)
+          this.setAuthHeader(this.token)
+          
+          // Auto-connect to notifications if user is logged in
+          this.connectNotifications()
+        } catch (error) {
+          console.error('Error parsing stored user data:', error)
+          this.clearAuth()
+        }
       }
     }
 
@@ -198,54 +194,40 @@ class ApiService {
       }
     )
 
-    // Response interceptor with token refresh logic
+    // Response interceptor
     this.api.interceptors.response.use(
       (response: AxiosResponse) => {
         if (process.env.NODE_ENV === 'development') {
-          console.log(`API Response: ${response.config.method?.toUpperCase()} ${response.config.url}`, response.data)
+          console.log(`✅ API Response: ${response.config.method?.toUpperCase()} ${response.config.url}`, response.data)
         }
         return response
       },
       async (error: AxiosError) => {
-        const originalRequest = error.config as any
         const status = error.response?.status
 
-        // Handle authentication errors with token refresh
-        if (status === 401 && !originalRequest._retry) {
-          originalRequest._retry = true
-          
-          try {
-            const newToken = await this.refreshAuthToken()
-            if (newToken) {
-              this.setAuthHeader(newToken)
-              originalRequest.headers['Authorization'] = `Bearer ${newToken}`
-              return this.api(originalRequest)
-            }
-          } catch (refreshError) {
-            this.clearAuth()
-            toast.error('Session expired. Please login again.')
-            window.location.href = '/login'
-            return Promise.reject(refreshError)
-          }
-        }
-
-        // Handle other errors with user-friendly messages
+        // Handle different error types
         const errorMessage = this.getErrorMessage(error)
         
-        if (status === 500) {
+        if (status === 401) {
+          this.clearAuth()
+          toast.error('Session expired. Please login again.')
+          if (typeof window !== 'undefined') {
+            window.location.href = '/login'
+          }
+        } else if (status === 500) {
           toast.error('Server error. Please try again later.')
         } else if (status === 429) {
           toast.error('Too many requests. Please slow down.')
         } else if (status === 403) {
           toast.error('You don\'t have permission to perform this action.')
         } else if (status >= 400 && status < 500) {
-          // Only show toast for non-auth errors that aren't handled elsewhere
-          if (status !== 401 && !originalRequest._skipErrorToast) {
+          // Only show toast for errors that aren't handled elsewhere
+          if (!error.config?._skipErrorToast) {
             toast.error(errorMessage)
           }
         }
 
-        console.error(' API Error:', error.response?.data || error.message)
+        console.error('❌ API Error:', error.response?.data || error.message)
         return Promise.reject(error)
       }
     )
@@ -254,29 +236,6 @@ class ApiService {
   private getErrorMessage(error: AxiosError): string {
     const data = error.response?.data as any
     return data?.error?.message || data?.message || error.message || 'Something went wrong'
-  }
-
-  private async refreshAuthToken(): Promise<string | null> {
-    if (!this.refreshToken) return null
-
-    try {
-      const response = await axios.post(`${CONSTANTS.API_BASE_URL}/auth/refresh`, {
-        refreshToken: this.refreshToken
-      })
-
-      const { token, refreshToken } = response.data.data
-      this.token = token
-      this.refreshToken = refreshToken
-
-      // Update localStorage
-      localStorage.setItem(CONSTANTS.STORAGE_KEYS.AUTH_TOKEN, token)
-      localStorage.setItem(CONSTANTS.STORAGE_KEYS.REFRESH_TOKEN, refreshToken)
-
-      return token
-    } catch (error) {
-      console.error('Token refresh failed:', error)
-      return null
-    }
   }
 
   // Auth token management
@@ -291,13 +250,23 @@ class ApiService {
 
   clearAuth() {
     this.token = null
-    this.refreshToken = null
+    this.currentUser = null
     delete this.api.defaults.headers.common['Authorization']
+    
+    // Disconnect notifications
+    notificationService.disconnect()
     
     if (typeof window !== 'undefined') {
       localStorage.removeItem(CONSTANTS.STORAGE_KEYS.AUTH_TOKEN)
-      localStorage.removeItem(CONSTANTS.STORAGE_KEYS.REFRESH_TOKEN)
       localStorage.removeItem(CONSTANTS.STORAGE_KEYS.USER_DATA)
+    }
+  }
+
+  // Notification connection management
+  private connectNotifications() {
+    if (this.token && typeof window !== 'undefined') {
+      const websocketUrl = process.env.NEXT_PUBLIC_WEBSOCKET_URL || 'http://localhost:5000'
+      notificationService.connect(this.token, websocketUrl)
     }
   }
 
@@ -309,11 +278,14 @@ class ApiService {
     config?: any
   ): Promise<T> {
     try {
-      const response = await this.api[method](endpoint, method === 'get' ? { ...config, params: data } : data, config)
+      const response = await this.api[method](
+        endpoint, 
+        method === 'get' ? { ...config, params: data } : data, 
+        method === 'get' ? config : { ...config }
+      )
       
-      // Handle different response structures
+      // Handle standard API response format
       if (response.data?.success !== undefined) {
-        // Standard API response format
         if (!response.data.success) {
           throw new Error(response.data.error?.message || response.data.message || 'Request failed')
         }
@@ -331,90 +303,87 @@ class ApiService {
     }
   }
 
-  // Auth endpoints
+  // ========================================
+  // AUTH ENDPOINTS (BACKEND EXISTS)
+  // ========================================
+
   async login(email: string, password: string): Promise<AuthResponse> {
-    const response = await this.request<{ user: User; token: string; refreshToken: string }>(
+    const response = await this.request<{ user: User; token: string }>(
       'post', 
       '/auth/login', 
       { email, password }
     )
     
     this.setAuthHeader(response.token)
-    this.refreshToken = response.refreshToken
+    this.currentUser = response.user
     
-    // Store tokens and user data
+    // Store user data
     if (typeof window !== 'undefined') {
-      localStorage.setItem(CONSTANTS.STORAGE_KEYS.REFRESH_TOKEN, response.refreshToken)
       localStorage.setItem(CONSTANTS.STORAGE_KEYS.USER_DATA, JSON.stringify(response.user))
     }
+    
+    // Connect to notifications after successful login
+    this.connectNotifications()
     
     toast.success(`Welcome back, ${response.user.name}! 🎉`)
     return response
   }
 
   async register(email: string, password: string, name: string): Promise<AuthResponse> {
-    const response = await this.request<{ user: User; token: string; refreshToken: string }>(
+    const response = await this.request<{ user: User; token: string }>(
       'post', 
       '/auth/register', 
       { email, password, name }
     )
     
     this.setAuthHeader(response.token)
-    this.refreshToken = response.refreshToken
+    this.currentUser = response.user
     
-    // Store tokens and user data
+    // Store user data
     if (typeof window !== 'undefined') {
-      localStorage.setItem(CONSTANTS.STORAGE_KEYS.REFRESH_TOKEN, response.refreshToken)
       localStorage.setItem(CONSTANTS.STORAGE_KEYS.USER_DATA, JSON.stringify(response.user))
     }
+    
+    // Connect to notifications after successful registration
+    this.connectNotifications()
     
     toast.success(`Welcome to GiftWish, ${response.user.name}! ✨`)
     return response
   }
 
   async getProfile(): Promise<User> {
-    return this.request<User>('get', '/auth/profile')
-  }
-
-  async updateProfile(data: UpdateProfileData): Promise<User> {
-    const response = await this.request<User>('put', '/auth/profile', data)
+    const user = await this.request<User>('get', '/auth/profile')
+    this.currentUser = user
     
-    // Update localStorage
+    // Update stored user data
     if (typeof window !== 'undefined') {
-      localStorage.setItem(CONSTANTS.STORAGE_KEYS.USER_DATA, JSON.stringify(response))
+      localStorage.setItem(CONSTANTS.STORAGE_KEYS.USER_DATA, JSON.stringify(user))
     }
     
-    toast.success('Profile updated successfully! 👤')
-    return response
-  }
-
-  async changePassword(currentPassword: string, newPassword: string): Promise<void> {
-    await this.request('put', '/auth/change-password', { currentPassword, newPassword })
-    toast.success('Password changed successfully! 🔒')
+    return user
   }
 
   logout() {
-    // Call logout endpoint to invalidate token on server
-    this.request('post', '/auth/logout').catch(() => {
-      // Ignore errors on logout
-    })
+    // Disconnect notifications before clearing auth
+    notificationService.disconnect()
     
     this.clearAuth()
     toast.success('Logged out successfully')
-    window.location.href = '/'
+    if (typeof window !== 'undefined') {
+      window.location.href = '/'
+    }
   }
 
-  // Events endpoint
-  async getMyEvents(): Promise<Event[]> {
-    return this.request<Event[]>('get', '/events/mine')
+  // ========================================
+  // EVENT ENDPOINTS (BACKEND EXISTS)
+  // ========================================
+
+  async getMyEvents(includeInactive?: boolean): Promise<Event[]> {
+    return this.request<Event[]>('get', '/events/mine', { includeInactive })
   }
 
   async getFriendsEvents(): Promise<Event[]> {
     return this.request<Event[]>('get', '/events/friends')
-  }
-
-  async getEvent(eventId: number): Promise<Event> {
-    return this.request<Event>('get', `/events/${eventId}`)
   }
 
   async createEvent(eventData: CreateEventData): Promise<Event> {
@@ -423,7 +392,7 @@ class ApiService {
     return response
   }
 
-  async updateEvent(eventId: number, eventData: Partial<CreateEventData>): Promise<Event> {
+  async updateEvent(eventId: number, eventData: Partial<CreateEventData> & { isActive?: boolean }): Promise<Event> {
     const response = await this.request<Event>('put', `/events/${eventId}`, eventData)
     toast.success('Event updated! ✏️')
     return response
@@ -434,51 +403,37 @@ class ApiService {
     toast.success('Event deleted! 🗑️')
   }
 
-  // Wishlist endpoint
-
-async getWishlist(eventId: number): Promise<WishlistData> {
-  return this.request<WishlistData>('get', `/gifts/wishlist/${eventId}`)
-}
-
-
-async addWishlistItem(eventId: number, itemData: CreateWishlistItemData): Promise<WishlistItem> {
-  const response = await this.request<WishlistItem>('post', `/events/${eventId}/wishlist`, itemData)
-  toast.success('Item added to wishlist! 🎁')
-  return response
-}
-
-  async updateWishlistItem(itemId: number, itemData: Partial<CreateWishlistItemData>): Promise<WishlistItem> {
-    const response = await this.request<WishlistItem>('put', `/wishlist/items/${itemId}`, itemData)
-    toast.success('Wishlist item updated! ✏️')
+  async addWishlistItem(eventId: number, itemData: CreateWishlistItemData): Promise<WishlistItem> {
+    const response = await this.request<WishlistItem>('post', `/events/${eventId}/wishlist`, itemData)
+    toast.success('Item added to wishlist! 🎁')
     return response
   }
 
-  async deleteWishlistItem(itemId: number): Promise<void> {
-    await this.request('delete', `/wishlist/items/${itemId}`)
-    toast.success('Item removed from wishlist! 🗑️')
-  }
+  // ========================================
+  // FRIEND ENDPOINTS (BACKEND EXISTS - CORRECTED)
+  // ========================================
 
-  // Friends endpoints
   async getFriends(): Promise<Friend[]> {
-    return this.request<Friend[]>('get', '/friends')
+    return this.request<Friend[]>('get', '/friends/list')
   }
 
   async getFriendRequests(): Promise<FriendRequest[]> {
     return this.request<FriendRequest[]>('get', '/friends/requests')
   }
 
-  async sendFriendRequest(friendCode: string, message?: string): Promise<void> {
-    await this.request('post', '/friends/request', { friendCode, message })
+  async sendFriendRequest(friendCode: string): Promise<void> {
+    await this.request('post', '/friends/request', { friendCode })
     toast.success('Friend request sent! 📨')
   }
 
+  // CORRECTED: Backend uses single endpoint with action parameter
   async acceptFriendRequest(requestId: number): Promise<void> {
-    await this.request('put', `/friends/requests/${requestId}/accept`)
+    await this.request('put', `/friends/requests/${requestId}/respond`, { action: 'accept' })
     toast.success('Friend request accepted! 🤝')
   }
 
   async declineFriendRequest(requestId: number): Promise<void> {
-    await this.request('put', `/friends/requests/${requestId}/decline`)
+    await this.request('put', `/friends/requests/${requestId}/respond`, { action: 'decline' })
     toast.success('Friend request declined')
   }
 
@@ -487,110 +442,138 @@ async addWishlistItem(eventId: number, itemData: CreateWishlistItemData): Promis
     toast.success('Friend removed')
   }
 
-  // Friends link endpoint
-  async generateFriendLink(expiresInHours: number = 168): Promise<{ shareableLink: string; token: string }> {
-    return this.request<{ shareableLink: string; token: string }>('post', '/friends/generate-link', { expiresInHours })
+  // Friend link endpoints (CORRECTED)
+  async generateFriendLink(): Promise<{ shareableLink: string; token: string; expiresIn: string }> {
+    return this.request<{ shareableLink: string; token: string; expiresIn: string }>('post', '/friends/generate-link')
   }
 
-  async getFriendRequestInfo(token: string): Promise<{ requester: User; isValid: boolean; expiresAt: string }> {
-    return this.request<{ requester: User; isValid: boolean; expiresAt: string }>('get', `/friends/link-info/${token}`)
+  async getFriendRequestInfo(token: string): Promise<{ 
+    requester: { name: string; email: string; friendCode: string }; 
+    createdAt: string; 
+    expiresAt: string 
+  }> {
+    return this.request('get', `/friends/token/${token}`)
   }
 
+  // CORRECTED: Token in URL, not body
   async acceptFriendRequestViaToken(token: string): Promise<void> {
-    await this.request('post', '/friends/accept-via-token', { token })
+    await this.request('post', `/friends/accept-token/${token}`)
     toast.success('Friend request accepted! 🤝')
   }
 
-  // Gifts endpoints
-  async pledgeGift(itemId: number, message?: string): Promise<void> {
-    await this.request('post', `/gifts/pledge`, { itemId, message })
+  // ========================================
+  // GIFT ENDPOINTS (BACKEND EXISTS - CORRECTED)
+  // ========================================
+
+  async getWishlist(eventId: number): Promise<WishlistData> {
+    return this.request<WishlistData>('get', `/gifts/wishlist/${eventId}`)
+  }
+
+  // CORRECTED: itemId in URL
+  async pledgeGift(itemId: number): Promise<void> {
+    await this.request('post', `/gifts/pledge/${itemId}`)
     toast.success('Gift pledged! 🎁')
   }
 
-  async unpledgeGift(pledgeId: number): Promise<void> {
-    await this.request('delete', `/gifts/pledge/${pledgeId}`)
-    toast.success('Gift unpledged')
-  }
-
-  async markGiftAsPurchased(pledgeId: number, message?: string, hasImage?: boolean): Promise<void> {
-    await this.request('put', `/gifts/pledge/${pledgeId}/purchase`, { message, hasImage })
+  // CORRECTED: Backend URL structure + file upload support
+  async markGiftAsPurchased(pledgeId: number, message?: string, imageFile?: File): Promise<void> {
+    if (imageFile) {
+      // Use FormData for file upload
+      const formData = new FormData()
+      if (message) formData.append('message', message)
+      formData.append('image', imageFile)
+      
+      await this.request('put', `/gifts/purchase/${pledgeId}`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      })
+    } else if (message) {
+      // JSON request for message only
+      await this.request('put', `/gifts/purchase/${pledgeId}`, { message })
+    } else {
+      // No additional data
+      await this.request('put', `/gifts/purchase/${pledgeId}`)
+    }
+    
     toast.success('Gift marked as purchased! 📦')
   }
 
-  async markGiftAsDelivered(pledgeId: number): Promise<void> {
-    await this.request('put', `/gifts/pledge/${pledgeId}/deliver`)
-    toast.success('Gift marked as delivered! 🎉')
-  }
-
-  async getReceivedGifts(): Promise<Gift[]> {
-    return this.request<Gift[]>('get', '/gifts/received')
+  async getReceivedGifts(eventId?: number): Promise<Gift[]> {
+    return this.request<Gift[]>('get', '/gifts/received', eventId ? { eventId } : undefined)
   }
 
   async getGivenGifts(): Promise<Gift[]> {
     return this.request<Gift[]>('get', '/gifts/given')
   }
 
-  async getMyPledges(): Promise<Gift[]> {
-    return this.request<Gift[]>('get', '/gifts/pledges')
+  // ========================================
+  // NOTIFICATION METHODS (WEBSOCKET INTEGRATION)
+  // ========================================
+
+  // Get current notifications (from WebSocket service)
+  getNotifications(): Notification[] {
+    return notificationService.getNotifications()
   }
 
-  // Dashboard endpoints
-  async getDashboardStats(): Promise<{
-    upcomingEvents: number
-    totalFriends: number
-    giftsGiven: number
-    giftsReceived: number
-    recentActivity: Array<{
-      type: string
-      message: string
-      time: string
-      icon: string
-    }>
-  }> {
-    return this.request('get', '/dashboard/stats')
+  // Get unread notification count
+  getUnreadNotificationCount(): number {
+    return notificationService.getUnreadCount()
   }
 
-  // Notifications endpoints
-  async getNotifications(): Promise<Array<{
-    id: number
-    type: string
-    title: string
-    message: string
-    isRead: boolean
-    createdAt: string
-    data?: any
-  }>> {
-    return this.request('get', '/notifications')
+  // Mark notification as read
+  markNotificationAsRead(notificationId: number): void {
+    notificationService.markAsRead(notificationId)
   }
 
-  async markNotificationAsRead(notificationId: number): Promise<void> {
-    await this.request('put', `/notifications/${notificationId}/read`)
+  // Mark all notifications as read
+  markAllNotificationsAsRead(): void {
+    notificationService.markAllAsRead()
   }
 
-  async markAllNotificationsAsRead(): Promise<void> {
-    await this.request('put', '/notifications/read-all')
+  // Subscribe to notification updates
+  subscribeToNotifications(callback: NotificationListener): () => void {
+    return notificationService.subscribe(callback)
   }
 
-  // File upload logic
-  async uploadFile(file: File, type: 'avatar' | 'gift_image' | 'event_cover'): Promise<{ url: string }> {
-    const formData = new FormData()
-    formData.append('file', file)
-    formData.append('type', type)
-
-    return this.request('post', '/upload', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    })
+  // Request fresh notifications from server
+  refreshNotifications(): void {
+    notificationService.requestNotifications()
   }
 
-  // Utility functions
-  async checkHealth(): Promise<{ status: string; timestamp: string }> {
-    return this.request('get', '/health')
+  // Get notification connection status
+  getNotificationConnectionStatus(): string {
+    return notificationService.getConnectionStatus()
+  }
+
+  // Check if notifications are connected
+  isNotificationsConnected(): boolean {
+    return notificationService.isConnected()
+  }
+
+  // Get notifications by type
+  getNotificationsByType(type: string): Notification[] {
+    return notificationService.getNotificationsByType(type)
+  }
+
+  // Get recent notifications
+  getRecentNotifications(count: number = 10): Notification[] {
+    return notificationService.getRecentNotifications(count)
+  }
+  // ========================================
+  // UTILITY ENDPOINTS (BACKEND EXISTS)
+  // ========================================
+
+  async checkHealth(): Promise<{ status: string; timestamp: string; uptime: number; environment: string }> {
+    // Health endpoint is at root level, not /api/health
+    const response = await axios.get(`${CONSTANTS.API_BASE_URL}/../health`)
+    return response.data
   }
 
   isAuthenticated(): boolean {
     return !!this.token && this.isTokenValid()
+  }
+
+  getCurrentUser(): User | null {
+    return this.currentUser
   }
 
   private isTokenValid(): boolean {
@@ -625,5 +608,6 @@ export type {
   WishlistData,
   CreateEventData,
   CreateWishlistItemData,
-  UpdateProfileData
+  Notification,
+  NotificationListener
 }

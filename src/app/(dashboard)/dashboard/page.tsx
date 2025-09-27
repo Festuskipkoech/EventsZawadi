@@ -5,6 +5,7 @@ import { motion } from 'framer-motion'
 import { useAuth } from '@/context/AuthContext'
 import { apiService, Event } from '@/services/api'
 import { getDaysUntil, formatDate } from '@/lib/utils'
+import { formatDistanceToNow } from 'date-fns'
 import Card from '@/components/Card'
 import Button from '@/components/Button'
 import { 
@@ -15,7 +16,8 @@ import {
   Clock,
   Heart,
   Sparkles,
-  TrendingUp
+  TrendingUp,
+  ArrowRight
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -34,6 +36,41 @@ export default function DashboardPage() {
   useEffect(() => {
     loadDashboardData()
   }, [])
+
+  // Function to get recent activity from notifications
+  const getRecentActivity = () => {
+    const notifications = apiService.getNotifications()
+    
+    return notifications.slice(0, 3).map(notification => {
+      let icon = ''
+      let message = notification.message
+      
+      switch (notification.type) {
+        case 'friend_request':
+          icon = '👥'
+          message = `${notification.relatedUser?.name || 'Someone'} sent you a friend request`
+          break
+        case 'friend_request_response':
+          icon = '🤝'
+          break
+        case 'gift_received':
+          icon = '🎁'
+          break
+        case 'wishlist_threshold':
+          icon = '📈'
+          break
+        default:
+          icon = '🔔'
+      }
+      
+      return {
+        type: notification.type,
+        message: message,
+        time: formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true }),
+        icon: icon
+      }
+    })
+  }
 
   const loadDashboardData = async () => {
     try {
@@ -63,18 +100,25 @@ export default function DashboardPage() {
         .slice(0, 3)
       setUpcomingEvents(sortedUpcoming)
 
-      // Mock recent activity (in real app, this would come from API)
-      setRecentActivity([
-        // { type: 'gift_pledged', message: 'Someone pledged a gift for your birthday!', time: '2 hours ago', icon: '🎁' },
-        // { type: 'friend_added', message: 'Sarah Johnson joined your friend circle', time: '1 day ago', icon: '👋' },
-        // { type: 'event_created', message: 'You created "Wedding Anniversary" event', time: '3 days ago', icon: '🎉' },
-      ])
+      // Get recent activity from notifications
+      const activity = getRecentActivity()
+      setRecentActivity(activity)
 
     } catch (error) {
       console.error('Dashboard loading error:', error)
     } finally {
       setLoading(false)
     }
+  }
+
+  // Function to truncate text with blur effect
+  const truncateText = (text: string, maxLength: number = 60) => {
+    if (text.length <= maxLength) {
+      return { text, isTruncated: false }
+    }
+    
+    const truncated = text.substring(0, maxLength - 3) + '...'
+    return { text: truncated, isTruncated: true }
   }
 
   if (loading) {
@@ -252,7 +296,7 @@ export default function DashboardPage() {
               <Sparkles className="w-5 h-5 mr-2 text-brand-500" />
               Quick Actions
             </h3>
-            <div className="space-y-3">
+            <div className="flex flex-col gap-4">
               <Link href="/events/create">
                 <Button variant="primary" size="sm" className="w-full justify-start" leftIcon={<Calendar size={16} />}>
                   Create Event
@@ -273,39 +317,83 @@ export default function DashboardPage() {
 
           {/* Recent Activity */}
           <Card className="p-6">
-            <h3 className="text-xl font-lato font-bold text-warm-800 mb-4 flex items-center">
-              <TrendingUp className="w-5 h-5 mr-2 text-brand-500" />
-              Recent Activity
-            </h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-lato font-bold text-warm-800 flex items-center">
+                <TrendingUp className="w-5 h-5 mr-2 text-brand-500" />
+                Recent Activity
+              </h3>
+              {recentActivity.length > 0 && (
+                <Link href="/notifications">
+                  <Button variant="ghost" size="sm" rightIcon={<ArrowRight size={14} />}>
+                    View All
+                  </Button>
+                </Link>
+              )}
+            </div>
             
             {recentActivity.length === 0 ? (
               <div className="text-center py-8">
                 <Clock className="w-12 h-12 text-warm-300 mx-auto mb-3" />
                 <p className="text-warm-500 text-sm">No recent activity</p>
+                <p className="text-xs text-warm-400 mt-1">Activity will appear here when you interact with friends</p>
               </div>
             ) : (
               <div className="space-y-4">
-                {recentActivity.map((activity, index) => (
-                  <motion.div
-                    key={index}
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.4, delay: index * 0.1 }}
-                    className="flex items-start space-x-3"
-                  >
-                    <div className="w-8 h-8 bg-gradient-to-br from-brand-100 to-ocean-100 rounded-full flex items-center justify-center text-sm">
-                      {activity.icon}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-warm-700 font-medium">
-                        {activity.message}
-                      </p>
-                      <p className="text-xs text-warm-500 mt-1">
-                        {activity.time}
-                      </p>
-                    </div>
-                  </motion.div>
-                ))}
+                {recentActivity.map((activity, index) => {
+                  const { text: displayText, isTruncated } = truncateText(activity.message, 50)
+                  
+                  return (
+                    <motion.div
+                      key={index}
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.4, delay: index * 0.1 }}
+                      className="relative"
+                    >
+                      <div className="flex items-start space-x-3">
+                        <div className="w-8 h-8 bg-gradient-to-br from-brand-100 to-ocean-100 rounded-full flex items-center justify-center text-sm flex-shrink-0">
+                          {activity.icon}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="relative">
+                            <p className={`text-sm text-warm-700 font-medium ${isTruncated ? 'pr-2' : ''}`}>
+                              {displayText}
+                              {isTruncated && (
+                                <span className="absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-white to-transparent pointer-events-none" />
+                              )}
+                            </p>
+                            <p className="text-xs text-warm-500 mt-1">
+                              {activity.time}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                      {isTruncated && (
+                        <div className="mt-2 text-right">
+                          <Link href="/notifications">
+                            <button className="text-xs text-brand-500 hover:text-brand-600 font-medium transition-colors">
+                              View more
+                            </button>
+                          </Link>
+                        </div>
+                      )}
+                    </motion.div>
+                  )
+                })}
+                
+                {/* View All Button at bottom if there are activities */}
+                <div className="pt-3 border-t border-warm-200 mt-4">
+                  <Link href="/notifications">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="w-full text-brand-600 hover:text-brand-700"
+                      rightIcon={<ArrowRight size={16} />}
+                    >
+                      See all activity
+                    </Button>
+                  </Link>
+                </div>
               </div>
             )}
           </Card>

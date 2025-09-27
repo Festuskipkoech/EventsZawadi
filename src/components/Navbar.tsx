@@ -6,13 +6,13 @@ import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '@/context/AuthContext'
 import { getInitials } from '@/lib/utils'
-import Image from 'next/image';
+import NotificationBell from '@/components/NotificationBell'
+import Image from 'next/image'
 import { 
   Gift, 
   Calendar, 
   Users, 
   User,
-  Bell,
   Settings,
   LogOut,
   Menu,
@@ -26,7 +26,6 @@ export default function Navbar() {
   const pathname = usePathname()
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const [notificationCount] = useState(3) 
   const profileMenuRef = useRef<HTMLDivElement>(null)
 
   // Close profile menu when clicking outside
@@ -104,24 +103,8 @@ export default function Navbar() {
             {/* Right Side Actions */}
             <div className="flex items-center space-x-4">
               
-              {/* Notifications */}
-              <motion.button
-                className="relative p-2 text-warm-600 hover:text-brand-600 hover:bg-brand-50 rounded-xl transition-all duration-200"
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-              >
-                <Bell size={20} />
-                {notificationCount > 0 && (
-                  <motion.span
-                    className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center"
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ type: 'spring', duration: 0.3 }}
-                  >
-                    {notificationCount > 9 ? '9+' : notificationCount}
-                  </motion.span>
-                )}
-              </motion.button>
+              {/* Notifications - Now using the new NotificationBell component */}
+              <NotificationBell />
 
               {/* Profile Menu */}
               <div className="relative" ref={profileMenuRef}>
@@ -136,6 +119,8 @@ export default function Navbar() {
                       <Image 
                         src={user.avatarUrl} 
                         alt={user.name}
+                        width={32}
+                        height={32}
                         className="w-full h-full rounded-full object-cover"
                       />
                     ) : (
@@ -176,6 +161,8 @@ export default function Navbar() {
                               <Image
                                 src={user.avatarUrl} 
                                 alt={user.name}
+                                width={48}
+                                height={48}
                                 className="w-full h-full rounded-full object-cover"
                               />
                             ) : (
@@ -209,25 +196,24 @@ export default function Navbar() {
                           </motion.div>
                         </Link>
 
+                        <Link href="/notifications">
+                          <motion.div
+                            className="flex items-center space-x-3 px-4 py-2 text-warm-700 hover:bg-warm-50 hover:text-brand-600 transition-colors cursor-pointer"
+                            onClick={() => setIsProfileMenuOpen(false)}
+                            whileHover={{ x: 4 }}
+                          >
+                            <Settings size={16} />
+                            <span className="font-medium">Notifications</span>
+                          </motion.div>
+                        </Link>
+
                         <motion.div
                           className="flex items-center space-x-3 px-4 py-2 text-warm-700 hover:bg-warm-50 hover:text-brand-600 transition-colors cursor-pointer"
                           whileHover={{ x: 4 }}
                         >
                           <Settings size={16} />
                           <span className="font-medium">Preferences</span>
-                        </motion.div>
-
-                        <motion.div
-                          className="flex items-center space-x-3 px-4 py-2 text-warm-700 hover:bg-warm-50 hover:text-brand-600 transition-colors cursor-pointer"
-                          whileHover={{ x: 4 }}
-                        >
-                          <Bell size={16} />
-                          <span className="font-medium">Notifications</span>
-                          {notificationCount > 0 && (
-                            <span className="ml-auto bg-red-100 text-red-600 text-xs px-2 py-1 rounded-full font-medium">
-                              {notificationCount}
-                            </span>
-                          )}
+                          <span className="ml-auto text-xs text-warm-400">Soon</span>
                         </motion.div>
                       </div>
 
@@ -284,6 +270,22 @@ export default function Navbar() {
                     </motion.div>
                   </Link>
                 ))}
+
+                {/* Mobile Notifications Link */}
+                <Link href="/notifications">
+                  <motion.div
+                    className={`flex items-center space-x-3 px-4 py-3 rounded-xl font-medium transition-all duration-200 ${
+                      pathname === '/notifications'
+                        ? 'bg-brand-100 text-brand-700'
+                        : 'text-warm-600 hover:text-brand-600 hover:bg-brand-50'
+                    }`}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <Settings size={20} />
+                    <span>Notifications</span>
+                  </motion.div>
+                </Link>
               </div>
             </motion.div>
           )}
