@@ -6,7 +6,6 @@ import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { apiService, Event } from '@/services/api'
 import { getDaysUntil, formatDate } from '@/lib/utils'
-import { useAuth } from '@/context/AuthContext'
 import Card from '@/components/Card'
 import Button from '@/components/Button'
 import { 
@@ -21,11 +20,15 @@ import {
   Share2,
   MoreVertical
 } from 'lucide-react'
+export async function generateStaticParams() {
+  // Return empty array to skip pre-generation
+  // Pages will be generated on-demand on the client side
+  return []
+}
 
-export default function EventDetailsPage() {
-  const params = useParams()
+export default function EventDetailsPage({ params }: { params: { eventId: string } }) {
+  // const params = useParams()
   const router = useRouter()
-  const { user } = useAuth()
   const eventId = params?.eventId as string
   
   const [event, setEvent] = useState<Event | null>(null)

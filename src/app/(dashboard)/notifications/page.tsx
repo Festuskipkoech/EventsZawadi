@@ -10,7 +10,6 @@ import Button from '@/components/Button'
 import { 
   Bell,
   BellRing,
-  CheckCheck,
   Users,
   Gift,
   TrendingUp,

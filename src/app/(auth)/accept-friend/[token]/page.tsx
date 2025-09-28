@@ -25,9 +25,14 @@ interface FriendRequestData {
   isValid: boolean
   expiresAt: string
 }
+export async function generateStaticParams() {
+  // Return empty array to skip pre-generation
+  // Pages will be generated on-demand on the client side
+  return []
+}
 
-export default function AcceptFriendPage() {
-  const params = useParams()
+export default function AcceptFriendPage({ params }: { params: { eventId: string } }) {
+  // const params = useParams()
   const router = useRouter()
   const { isAuthenticated, isLoading: authLoading } = useAuth()
   const token = params?.token as string

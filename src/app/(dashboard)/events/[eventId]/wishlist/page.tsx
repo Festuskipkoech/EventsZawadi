@@ -56,9 +56,12 @@ interface WishlistData {
   }
   items: WishlistItem[]
 }
-
-export default function WishlistPage() {
-  const params = useParams()
+export async function generateStaticParams() {
+  // Return empty array to skip pre-generation
+  // Pages will be generated on-demand on the client side
+  return []
+}
+export default function WishlistPage({ params }: { params: { eventId: string } }) {
   const router = useRouter()
   const eventId = params?.eventId as string
   
