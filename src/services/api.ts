@@ -136,6 +136,17 @@ interface CreateWishlistItemData {
   itemUrl?: string
 }
 
+interface UpdateProfileData {
+  name?: string
+  email?: string
+}
+interface UpdateWishlistItemData {
+  title?: string
+  description?: string
+  price?: number
+  priority?: number
+  itemUrl?: string
+}
 class ApiService {
   private api: AxiosInstance
   private token: string | null = null
@@ -262,10 +273,23 @@ class ApiService {
     }
   }
 
+  async updateProfile(profileData: UpdateProfileData): Promise<User> {
+    const response = await this.request<User>('put', '/auth/profile', profileData)
+    this.currentUser = response
+    
+    // Update stored user data
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(CONSTANTS.STORAGE_KEYS.USER_DATA, JSON.stringify(response))
+    }
+    
+    toast.success('Profile updated successfully! ✏️')
+    return response
+  }
+
   // Notification connection management
   private connectNotifications() {
     if (this.token && typeof window !== 'undefined') {
-      const websocketUrl = process.env.NEXT_PUBLIC_WEBSOCKET_URL || 'http://localhost:5000'
+      const websocketUrl = process.env.NEXT_PUBLIC_WEBSOCKET_URL
       notificationService.connect(this.token, websocketUrl)
     }
   }
@@ -303,9 +327,7 @@ class ApiService {
     }
   }
 
-  // ========================================
-  // AUTH ENDPOINTS (BACKEND EXISTS)
-  // ========================================
+// auth endpoints
 
   async login(email: string, password: string): Promise<AuthResponse> {
     const response = await this.request<{ user: User; token: string }>(
@@ -373,10 +395,7 @@ class ApiService {
       window.location.href = '/'
     }
   }
-
-  // ========================================
-  // EVENT ENDPOINTS (BACKEND EXISTS)
-  // ========================================
+// event endpoints
 
   async getMyEvents(includeInactive?: boolean): Promise<Event[]> {
     return this.request<Event[]>('get', '/events/mine', { includeInactive })
@@ -409,9 +428,17 @@ class ApiService {
     return response
   }
 
-  // ========================================
-  // FRIEND ENDPOINTS (BACKEND EXISTS - CORRECTED)
-  // ========================================
+async updateWishlistItem(eventId: number, itemId: number, itemData: UpdateWishlistItemData): Promise<WishlistItem> {
+  const response = await this.request<WishlistItem>('put', `/events/${eventId}/wishlist/${itemId}`, itemData)
+  toast.success('Wishlist item updated! ✏️')
+  return response
+}
+
+async deleteWishlistItem(eventId: number, itemId: number): Promise<void> {
+  await this.request('delete', `/events/${eventId}/wishlist/${itemId}`)
+  toast.success('Wishlist item deleted! 🗑️')
+}
+// friends endpoint
 
   async getFriends(): Promise<Friend[]> {
     return this.request<Friend[]>('get', '/friends/list')
@@ -426,7 +453,6 @@ class ApiService {
     toast.success('Friend request sent! 📨')
   }
 
-  // CORRECTED: Backend uses single endpoint with action parameter
   async acceptFriendRequest(requestId: number): Promise<void> {
     await this.request('put', `/friends/requests/${requestId}/respond`, { action: 'accept' })
     toast.success('Friend request accepted! 🤝')
@@ -442,7 +468,6 @@ class ApiService {
     toast.success('Friend removed')
   }
 
-  // Friend link endpoints (CORRECTED)
   async generateFriendLink(): Promise<{ shareableLink: string; token: string; expiresIn: string }> {
     return this.request<{ shareableLink: string; token: string; expiresIn: string }>('post', '/friends/generate-link')
   }
@@ -455,27 +480,22 @@ class ApiService {
     return this.request('get', `/friends/token/${token}`)
   }
 
-  // CORRECTED: Token in URL, not body
   async acceptFriendRequestViaToken(token: string): Promise<void> {
     await this.request('post', `/friends/accept-token/${token}`)
     toast.success('Friend request accepted! 🤝')
   }
 
-  // ========================================
-  // GIFT ENDPOINTS (BACKEND EXISTS - CORRECTED)
-  // ========================================
+  // Gifts endpoints
 
   async getWishlist(eventId: number): Promise<WishlistData> {
     return this.request<WishlistData>('get', `/gifts/wishlist/${eventId}`)
   }
 
-  // CORRECTED: itemId in URL
   async pledgeGift(itemId: number): Promise<void> {
     await this.request('post', `/gifts/pledge/${itemId}`)
     toast.success('Gift pledged! 🎁')
   }
 
-  // CORRECTED: Backend URL structure + file upload support
   async markGiftAsPurchased(pledgeId: number, message?: string, imageFile?: File): Promise<void> {
     if (imageFile) {
       // Use FormData for file upload
@@ -505,9 +525,7 @@ class ApiService {
     return this.request<Gift[]>('get', '/gifts/given')
   }
 
-  // ========================================
-  // NOTIFICATION METHODS (WEBSOCKET INTEGRATION)
-  // ========================================
+// notifications endpoints
 
   // Get current notifications (from WebSocket service)
   getNotifications(): Notification[] {
@@ -558,10 +576,7 @@ class ApiService {
   getRecentNotifications(count: number = 10): Notification[] {
     return notificationService.getRecentNotifications(count)
   }
-  // ========================================
-  // UTILITY ENDPOINTS (BACKEND EXISTS)
-  // ========================================
-
+  // Utility endpoints
   async checkHealth(): Promise<{ status: string; timestamp: string; uptime: number; environment: string }> {
     // Health endpoint is at root level, not /api/health
     const response = await axios.get(`${CONSTANTS.API_BASE_URL}/../health`)
@@ -608,6 +623,8 @@ export type {
   WishlistData,
   CreateEventData,
   CreateWishlistItemData,
+  UpdateWishlistItemData,
   Notification,
-  NotificationListener
+  NotificationListener,
+  UpdateProfileData
 }

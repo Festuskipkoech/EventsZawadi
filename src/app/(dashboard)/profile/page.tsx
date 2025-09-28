@@ -1,6 +1,8 @@
+
 'use client'
 
 import React, { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { useAuth } from '@/context/AuthContext'
 import { getInitials, formatDate } from '@/lib/utils'
@@ -16,33 +18,50 @@ import {
   Copy,
   Check,
   Settings,
-  Shield,
   Bell,
   Gift,
   Users,
-  CalendarDays
+  CalendarDays,
+  Edit,
+  Save,
+  X
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Image from 'next/image'
 
 export default function ProfilePage() {
-  const { user } = useAuth()
+  const { user, updateProfile } = useAuth()
   const [codeCopied, setCodeCopied] = useState(false)
+  const [isEditing, setIsEditing] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [editForm, setEditForm] = useState({
+    name: '',
+    email: ''
+  })
   const [stats, setStats] = useState({
     eventsCreated: 0,
     friendsCount: 0,
     giftsGiven: 0,
     giftsReceived: 0
   })
-  const [loading, setLoading] = useState(true)
+  const [statsLoading, setStatsLoading] = useState(true)
+
+  // Initialize form when user data changes
+  useEffect(() => {
+    if (user) {
+      setEditForm({
+        name: user.name,
+        email: user.email
+      })
+    }
+  }, [user])
 
   // Load user stats
   useEffect(() => {
     const loadStats = async () => {
       try {
-        setLoading(true)
+        setStatsLoading(true)
         
-        // Fetch real data from backend
         const [myEvents, friends, givenGifts, receivedGifts] = await Promise.all([
           apiService.getMyEvents().catch(() => []),
           apiService.getFriends().catch(() => []),
@@ -59,7 +78,7 @@ export default function ProfilePage() {
       } catch (error) {
         console.error('Error loading stats:', error)
       } finally {
-        setLoading(false)
+        setStatsLoading(false)
       }
     }
 
@@ -77,6 +96,66 @@ export default function ProfilePage() {
     } catch (error) {
       toast.error('Failed to copy code')
     }
+  }
+
+  const handleEditClick = () => {
+    setIsEditing(true)
+    setEditForm({
+      name: user?.name || '',
+      email: user?.email || ''
+    })
+  }
+
+  const handleCancelEdit = () => {
+    setIsEditing(false)
+    setEditForm({
+      name: user?.name || '',
+      email: user?.email || ''
+    })
+  }
+
+  const handleSaveProfile = async () => {
+    if (!user) return
+
+    // Validation
+    if (!editForm.name.trim()) {
+      toast.error('Name cannot be empty')
+      return
+    }
+
+    if (!editForm.email.trim()) {
+      toast.error('Email cannot be empty')
+      return
+    }
+
+    // Check if anything actually changed
+    const hasChanges = editForm.name !== user.name || editForm.email !== user.email
+    if (!hasChanges) {
+      setIsEditing(false)
+      return
+    }
+
+    try {
+      setIsLoading(true)
+      
+      const updates: { name?: string; email?: string } = {}
+      if (editForm.name !== user.name) updates.name = editForm.name.trim()
+      if (editForm.email !== user.email) updates.email = editForm.email.trim()
+
+      await updateProfile(updates)
+      setIsEditing(false)
+    } catch (error) {
+      // Error is already handled by the context
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleInputChange = (field: 'name' | 'email', value: string) => {
+    setEditForm(prev => ({
+      ...prev,
+      [field]: value
+    }))
   }
 
   if (!user) return null
@@ -118,7 +197,6 @@ export default function ProfilePage() {
                     getInitials(user.name)
                   )}
                 </div>
-                {/* Note: Avatar upload removed since backend doesn't support file upload */}
               </div>
               <h2 className="text-2xl font-lato font-bold text-warm-800">
                 {user.name}
@@ -126,32 +204,70 @@ export default function ProfilePage() {
               <p className="text-warm-600">@{user.friendCode}</p>
             </div>
 
-            {/* Profile Information (Read Only) */}
+            {/* Profile Information */}
             <div className="space-y-6">
-              <div className="pb-4 border-b border-warm-200">
-                <h3 className="text-lg font-lato font-bold text-warm-800">
-                  Account Information
-                </h3>
-                <p className="text-sm text-warm-600 mt-1">
-                  Your account details are managed securely
-                </p>
+              <div className="pb-4 border-b border-warm-200 flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-lato font-bold text-warm-800">
+                    Account Information
+                  </h3>
+                  <p className="text-sm text-warm-600 mt-1">
+                    {isEditing ? 'Update your profile information' : 'Your account details'}
+                  </p>
+                </div>
+                {!isEditing ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleEditClick}
+                    leftIcon={<Edit size={16} />}
+                  >
+                    Edit Profile
+                  </Button>
+                ) : (
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleCancelEdit}
+                      leftIcon={<X size={16} />}
+                      disabled={isLoading}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={handleSaveProfile}
+                      leftIcon={<Save size={16} />}
+                      disabled={isLoading}
+                      loading={isLoading}
+                    >
+                      Save
+                    </Button>
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <Input
                   type="text"
                   label="Full Name"
-                  value={user.name}
+                  value={isEditing ? editForm.name : user.name}
                   leftIcon={<User size={18} />}
-                  disabled
+                  disabled={!isEditing}
+                  onChange={(e) => handleInputChange('name', e.target.value)}
+                  placeholder="Enter your full name"
                 />
 
                 <Input
                   type="email"
                   label="Email Address"
-                  value={user.email}
+                  value={isEditing ? editForm.email : user.email}
                   leftIcon={<Mail size={18} />}
-                  disabled
+                  disabled={!isEditing}
+                  onChange={(e) => handleInputChange('email', e.target.value)}
+                  placeholder="Enter your email address"
                 />
 
                 <Input
@@ -179,18 +295,20 @@ export default function ProfilePage() {
                 />
               </div>
 
-              {/* Note about profile updates */}
-              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-                <div className="flex items-start space-x-3">
-                  <Settings className="w-5 h-5 text-blue-500 mt-0.5" />
-                  <div>
-                    <h4 className="font-medium text-blue-800">Profile Updates</h4>
-                    <p className="text-sm text-blue-600 mt-1">
-                      Profile editing features are coming soon! Contact support if you need to update your information.
-                    </p>
+              {/* Info about read-only fields */}
+              {!isEditing && (
+                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                  <div className="flex items-start space-x-3">
+                    <Settings className="w-5 h-5 text-blue-500 mt-0.5" />
+                    <div>
+                      <h4 className="font-medium text-blue-800">Profile Information</h4>
+                      <p className="text-sm text-blue-600 mt-1">
+                        You can update your name and email address. Your friend code is unique and cannot be changed.
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
           </Card>
         </div>
@@ -204,7 +322,7 @@ export default function ProfilePage() {
               <User className="w-5 h-5 mr-2 text-brand-500" />
               Your Activity
             </h3>
-            {loading ? (
+            {statsLoading ? (
               <div className="space-y-4">
                 {[...Array(4)].map((_, i) => (
                   <div key={i} className="flex justify-between items-center">
@@ -254,16 +372,10 @@ export default function ProfilePage() {
               Settings
             </h3>
             <div className="space-y-2">
-              <button className="w-full flex items-center space-x-3 p-3 text-left text-warm-700 hover:bg-brand-50 hover:text-brand-600 rounded-xl transition-colors">
+              <Link href="/notifications" className="w-full flex items-center space-x-3 p-3 text-left text-warm-700 hover:bg-brand-50 hover:text-brand-600 rounded-xl transition-colors">
                 <Bell className="w-4 h-4" />
                 <span className="text-sm font-medium">Notifications</span>
-                <span className="ml-auto text-xs text-warm-500">Coming Soon</span>
-              </button>
-              <button className="w-full flex items-center space-x-3 p-3 text-left text-warm-700 hover:bg-brand-50 hover:text-brand-600 rounded-xl transition-colors">
-                <Shield className="w-4 h-4" />
-                <span className="text-sm font-medium">Privacy</span>
-                <span className="ml-auto text-xs text-warm-500">Coming Soon</span>
-              </button>
+              </Link>
             </div>
           </Card>
 

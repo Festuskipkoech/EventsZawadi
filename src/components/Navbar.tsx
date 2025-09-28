@@ -12,7 +12,6 @@ import {
   Gift, 
   Calendar, 
   Users, 
-  User,
   Settings,
   LogOut,
   Home,
@@ -279,19 +278,6 @@ export default function Navbar() {
                             <span className="font-medium text-warm-700 text-sm">Notifications</span>
                           </motion.div>
                         </Link>
-
-                        <motion.div
-                          className="flex items-center space-x-3 px-4 py-3 hover:bg-warm-50 transition-colors"
-                          whileTap={{ scale: 0.98 }}
-                        >
-                          <div className="w-9 h-9 rounded-xl bg-nature-100 flex items-center justify-center flex-shrink-0">
-                            <Settings size={18} className="text-nature-600" />
-                          </div>
-                          <div className="flex items-center justify-between flex-1">
-                            <span className="font-medium text-warm-700 text-sm">Preferences</span>
-                            <span className="text-xs text-warm-400 bg-warm-100 px-2 py-0.5 rounded-full">Soon</span>
-                          </div>
-                        </motion.div>
 
                         {/* Divider */}
                         <div className="my-1 border-t border-warm-100"></div>

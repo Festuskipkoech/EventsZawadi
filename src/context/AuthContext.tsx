@@ -17,7 +17,8 @@ interface AuthContextType {
   logout: () => void
   refreshUser: () => Promise<void>
   updateUser: (userData: Partial<User>) => void
-  
+  updateProfile: (profileData: { name?: string; email?: string }) => Promise<void>
+
   // Utilities
   getToken: () => string | null
   isTokenValid: () => boolean
@@ -154,6 +155,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
       return false
     }
   }
+  const updateProfile = async (profileData: { name?: string; email?: string }) => {
+  try {
+    const updatedUser = await apiService.updateProfile(profileData)
+    setUser(updatedUser)
+  } catch (error: any) {
+    toast.error(error.message || 'Failed to update profile')
+    throw error
+  }
+}
 
   const value: AuthContextType = {
     // State
@@ -167,6 +177,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     logout: handleLogout,
     refreshUser,
     updateUser,
+    updateProfile,
     
     // Utilities
     getToken,

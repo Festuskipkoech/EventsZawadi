@@ -114,9 +114,10 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             <motion.label
               className={cn(
                 'absolute left-4 transition-all duration-200 pointer-events-none font-inter',
+                leftIcon ? 'left-10' : 'left-4',
                 isFocused || hasValue
-                  ? 'top-2 text-xs text-brand-600 font-medium'
-                  : 'top-1/2 -translate-y-1/2 text-sm text-warm-500'
+                  ? 'top-4 text-xs text-brand-600 font-medium'
+                  : 'top-5 -translate-y-1/2 text-sm text-warm-500'
               )}
               animate={{
                 scale: isFocused || hasValue ? 0.85 : 1,

@@ -20,14 +20,9 @@ import {
   Share2,
   MoreVertical
 } from 'lucide-react'
-export async function generateStaticParams() {
-  // Return empty array to skip pre-generation
-  // Pages will be generated on-demand on the client side
-  return []
-}
 
-export default function EventDetailsPage({ params }: { params: { eventId: string } }) {
-  // const params = useParams()
+export default function EventDetailsPage() {
+  const params = useParams()
   const router = useRouter()
   const eventId = params?.eventId as string
   
