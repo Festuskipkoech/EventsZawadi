@@ -15,24 +15,22 @@ import {
   User,
   Settings,
   LogOut,
-  Menu,
-  X,
   Home,
-  ChevronDown
+  MoreVertical,
+  Bell
 } from 'lucide-react'
 
 export default function Navbar() {
   const { user, logout } = useAuth()
   const pathname = usePathname()
-  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false)
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const profileMenuRef = useRef<HTMLDivElement>(null)
+  const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false)
+  const moreMenuRef = useRef<HTMLDivElement>(null)
 
-  // Close profile menu when clicking outside
+  // Close more menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
-        setIsProfileMenuOpen(false)
+      if (moreMenuRef.current && !moreMenuRef.current.contains(event.target as Node)) {
+        setIsMoreMenuOpen(false)
       }
     }
 
@@ -55,7 +53,7 @@ export default function Navbar() {
   }
 
   const handleLogout = () => {
-    setIsProfileMenuOpen(false)
+    setIsMoreMenuOpen(false)
     logout()
   }
 
@@ -63,7 +61,8 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-warm-200 shadow-sm">
+      {/* Desktop & Tablet Top Navbar */}
+      <nav className="hidden md:block sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-warm-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             
@@ -81,7 +80,7 @@ export default function Navbar() {
             </Link>
 
             {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center space-x-1">
+            <div className="flex items-center space-x-1">
               {navigationItems.map((item) => (
                 <Link key={item.href} href={item.href}>
                   <motion.div
@@ -102,15 +101,12 @@ export default function Navbar() {
 
             {/* Right Side Actions */}
             <div className="flex items-center space-x-4">
-              
-              {/* Notifications - Now using the new NotificationBell component */}
               <NotificationBell />
-
-              {/* Profile Menu */}
-              <div className="relative" ref={profileMenuRef}>
+              
+              {/* Profile Button */}
+              <Link href="/profile">
                 <motion.button
-                  onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
-                  className="flex items-center space-x-3 p-2 rounded-xl hover:bg-warm-50 transition-all duration-200 group"
+                  className="flex items-center space-x-3 p-2 rounded-xl hover:bg-warm-50 transition-all duration-200"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
@@ -127,7 +123,7 @@ export default function Navbar() {
                       getInitials(user.name)
                     )}
                   </div>
-                  <div className="hidden sm:block text-left">
+                  <div className="hidden lg:block text-left">
                     <p className="text-sm font-medium text-warm-800 truncate max-w-[120px]">
                       {user.name}
                     </p>
@@ -135,175 +131,191 @@ export default function Navbar() {
                       @{user.friendCode}
                     </p>
                   </div>
-                  <ChevronDown 
-                    size={16} 
-                    className={`text-warm-400 transition-transform duration-200 ${
-                      isProfileMenuOpen ? 'rotate-180' : ''
-                    }`} 
-                  />
                 </motion.button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </nav>
 
-                {/* Profile Dropdown */}
-                <AnimatePresence>
-                  {isProfileMenuOpen && (
+      {/* Mobile Top Bar */}
+      <div className="md:hidden sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-warm-200 shadow-sm">
+        <div className="px-4 py-3 flex items-center justify-between">
+          {/* Logo */}
+          <Link href="/dashboard" className="flex items-center space-x-2">
+            <div className="w-8 h-8 bg-gradient-to-br from-brand-500 to-brand-600 rounded-xl flex items-center justify-center">
+              <Gift className="w-5 h-5 text-white" />
+            </div>
+            <span className="text-lg font-lato font-black text-warm-800">
+              Events Zawadi
+            </span>
+          </Link>
+
+          {/* Profile Avatar */}
+          <Link href="/profile">
+            <motion.div
+              whileTap={{ scale: 0.9 }}
+              className="w-9 h-9 rounded-full bg-gradient-to-br from-brand-400 to-ocean-400 flex items-center justify-center text-white font-bold text-sm shadow-lg"
+            >
+              {user.avatarUrl ? (
+                <Image 
+                  src={user.avatarUrl} 
+                  alt={user.name}
+                  width={36}
+                  height={36}
+                  className="w-full h-full rounded-full object-cover"
+                />
+              ) : (
+                getInitials(user.name)
+              )}
+            </motion.div>
+          </Link>
+        </div>
+      </div>
+
+      {/* Mobile Bottom Tab Bar */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 mobile-tab-bar">
+        <div className="bg-white/95 backdrop-blur-xl border-t border-warm-200 shadow-2xl">
+          <div className="flex items-center justify-around px-2 py-2 safe-bottom">
+            {navigationItems.map((item) => {
+              const Icon = item.icon
+              const active = isActive(item.href)
+              
+              return (
+                <Link key={item.href} href={item.href} className="flex-1">
+                  <motion.div
+                    className="flex flex-col items-center justify-center py-2 px-1 rounded-2xl transition-all duration-300 relative"
+                    whileTap={{ scale: 0.9 }}
+                  >
+                    {/* Active Indicator */}
+                    {active && (
+                      <motion.div
+                        layoutId="mobile-active-tab"
+                        className="absolute inset-0 bg-brand-50 rounded-2xl"
+                        transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                      />
+                    )}
+                    
+                    {/* Icon */}
+                    <div className="relative z-10">
+                      <Icon 
+                        size={22} 
+                        className={`transition-colors duration-200 ${
+                          active ? 'text-brand-600' : 'text-warm-500'
+                        }`}
+                        strokeWidth={active ? 2.5 : 2}
+                      />
+                    </div>
+                    
+                    {/* Label */}
+                    <span className={`text-xs font-medium mt-1 transition-colors duration-200 relative z-10 ${
+                      active ? 'text-brand-700' : 'text-warm-600'
+                    }`}>
+                      {item.label}
+                    </span>
+                  </motion.div>
+                </Link>
+              )
+            })}
+
+            {/* More Menu Tab */}
+            <div className="flex-1 relative" ref={moreMenuRef}>
+              <button
+                onClick={() => setIsMoreMenuOpen(!isMoreMenuOpen)}
+                className="w-full"
+              >
+                <motion.div
+                  className="flex flex-col items-center justify-center py-2 px-1 rounded-2xl transition-all duration-300"
+                  whileTap={{ scale: 0.9 }}
+                >
+                  <MoreVertical 
+                    size={22} 
+                    className={`transition-colors duration-200 ${
+                      isMoreMenuOpen ? 'text-brand-600' : 'text-warm-500'
+                    }`}
+                    strokeWidth={isMoreMenuOpen ? 2.5 : 2}
+                  />
+                  <span className={`text-xs font-medium mt-1 transition-colors duration-200 ${
+                    isMoreMenuOpen ? 'text-brand-700' : 'text-warm-600'
+                  }`}>
+                    More
+                  </span>
+                </motion.div>
+              </button>
+
+              {/* Compact Dropdown Menu */}
+              <AnimatePresence>
+                {isMoreMenuOpen && (
+                  <>
+                    {/* Backdrop */}
                     <motion.div
-                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                      transition={{ duration: 0.2 }}
-                      className="absolute right-0 top-full mt-2 w-64 bg-white rounded-2xl shadow-xl border border-warm-200 py-2 z-50"
-                    >
-                      {/* Profile Header */}
-                      <div className="px-4 py-3 border-b border-warm-100">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-brand-400 to-ocean-400 flex items-center justify-center text-white font-bold shadow-lg">
-                            {user.avatarUrl ? (
-                              <Image
-                                src={user.avatarUrl} 
-                                alt={user.name}
-                                width={48}
-                                height={48}
-                                className="w-full h-full rounded-full object-cover"
-                              />
-                            ) : (
-                              getInitials(user.name)
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-warm-800 truncate">
-                              {user.name}
-                            </p>
-                            <p className="text-sm text-warm-500 truncate">
-                              {user.email}
-                            </p>
-                            <p className="text-xs text-brand-600 font-medium">
-                              @{user.friendCode}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[60]"
+                      onClick={() => setIsMoreMenuOpen(false)}
+                      style={{ bottom: '80px' }} // Don't cover bottom tabs
+                    />
 
+                    {/* Compact Menu */}
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.9, y: 10 }}
+                      transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                      className="absolute bottom-full right-0 mb-2 w-56 bg-white rounded-2xl shadow-2xl border border-warm-200 overflow-hidden z-[70]"
+                    >
                       {/* Menu Items */}
                       <div className="py-2">
-                        <Link href="/profile">
-                          <motion.div
-                            className="flex items-center space-x-3 px-4 py-2 text-warm-700 hover:bg-warm-50 hover:text-brand-600 transition-colors cursor-pointer"
-                            onClick={() => setIsProfileMenuOpen(false)}
-                            whileHover={{ x: 4 }}
-                          >
-                            <User size={16} />
-                            <span className="font-medium">Profile Settings</span>
-                          </motion.div>
-                        </Link>
-
                         <Link href="/notifications">
                           <motion.div
-                            className="flex items-center space-x-3 px-4 py-2 text-warm-700 hover:bg-warm-50 hover:text-brand-600 transition-colors cursor-pointer"
-                            onClick={() => setIsProfileMenuOpen(false)}
-                            whileHover={{ x: 4 }}
+                            className="flex items-center space-x-3 px-4 py-3 hover:bg-warm-50 transition-colors"
+                            onClick={() => setIsMoreMenuOpen(false)}
+                            whileTap={{ scale: 0.98 }}
                           >
-                            <Settings size={16} />
-                            <span className="font-medium">Notifications</span>
+                            <div className="w-9 h-9 rounded-xl bg-brand-100 flex items-center justify-center flex-shrink-0">
+                              <Bell size={18} className="text-brand-600" />
+                            </div>
+                            <span className="font-medium text-warm-700 text-sm">Notifications</span>
                           </motion.div>
                         </Link>
 
                         <motion.div
-                          className="flex items-center space-x-3 px-4 py-2 text-warm-700 hover:bg-warm-50 hover:text-brand-600 transition-colors cursor-pointer"
-                          whileHover={{ x: 4 }}
+                          className="flex items-center space-x-3 px-4 py-3 hover:bg-warm-50 transition-colors"
+                          whileTap={{ scale: 0.98 }}
                         >
-                          <Settings size={16} />
-                          <span className="font-medium">Preferences</span>
-                          <span className="ml-auto text-xs text-warm-400">Soon</span>
+                          <div className="w-9 h-9 rounded-xl bg-nature-100 flex items-center justify-center flex-shrink-0">
+                            <Settings size={18} className="text-nature-600" />
+                          </div>
+                          <div className="flex items-center justify-between flex-1">
+                            <span className="font-medium text-warm-700 text-sm">Preferences</span>
+                            <span className="text-xs text-warm-400 bg-warm-100 px-2 py-0.5 rounded-full">Soon</span>
+                          </div>
                         </motion.div>
-                      </div>
 
-                      {/* Logout */}
-                      <div className="border-t border-warm-100 pt-2">
+                        {/* Divider */}
+                        <div className="my-1 border-t border-warm-100"></div>
+
+                        {/* Logout */}
                         <motion.button
                           onClick={handleLogout}
-                          className="w-full flex items-center space-x-3 px-4 py-2 text-red-600 hover:bg-red-50 transition-colors"
-                          whileHover={{ x: 4 }}
+                          className="w-full flex items-center space-x-3 px-4 py-3 hover:bg-red-50 transition-colors"
+                          whileTap={{ scale: 0.98 }}
                         >
-                          <LogOut size={16} />
-                          <span className="font-medium">Sign Out</span>
+                          <div className="w-9 h-9 rounded-xl bg-red-100 flex items-center justify-center flex-shrink-0">
+                            <LogOut size={18} className="text-red-600" />
+                          </div>
+                          <span className="font-medium text-red-600 text-sm">Sign Out</span>
                         </motion.button>
                       </div>
                     </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-
-              {/* Mobile Menu Button */}
-              <button
-                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="md:hidden p-2 text-warm-600 hover:text-brand-600 hover:bg-brand-50 rounded-xl transition-all duration-200"
-              >
-                {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
-              </button>
+                  </>
+                )}
+              </AnimatePresence>
             </div>
           </div>
         </div>
-
-        {/* Mobile Menu */}
-        <AnimatePresence>
-          {isMobileMenuOpen && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="md:hidden border-t border-warm-200 bg-white"
-            >
-              <div className="px-4 py-4 space-y-2">
-                {navigationItems.map((item) => (
-                  <Link key={item.href} href={item.href}>
-                    <motion.div
-                      className={`flex items-center space-x-3 px-4 py-3 rounded-xl font-medium transition-all duration-200 ${
-                        isActive(item.href)
-                          ? 'bg-brand-100 text-brand-700'
-                          : 'text-warm-600 hover:text-brand-600 hover:bg-brand-50'
-                      }`}
-                      onClick={() => setIsMobileMenuOpen(false)}
-                      whileTap={{ scale: 0.98 }}
-                    >
-                      <item.icon size={20} />
-                      <span>{item.label}</span>
-                    </motion.div>
-                  </Link>
-                ))}
-
-                {/* Mobile Notifications Link */}
-                <Link href="/notifications">
-                  <motion.div
-                    className={`flex items-center space-x-3 px-4 py-3 rounded-xl font-medium transition-all duration-200 ${
-                      pathname === '/notifications'
-                        ? 'bg-brand-100 text-brand-700'
-                        : 'text-warm-600 hover:text-brand-600 hover:bg-brand-50'
-                    }`}
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <Settings size={20} />
-                    <span>Notifications</span>
-                  </motion.div>
-                </Link>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </nav>
-
-      {/* Mobile Menu Overlay */}
-      <AnimatePresence>
-        {isMobileMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-30 bg-black/20 backdrop-blur-sm md:hidden"
-            onClick={() => setIsMobileMenuOpen(false)}
-          />
-        )}
-      </AnimatePresence>
+      </div>
     </>
   )
 }

@@ -169,42 +169,47 @@ export default function WishlistPage() {
   const hasEventPassed = event.hasEventPassed
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
-      {/* Header */}
+    <div className="max-w-6xl mx-auto space-y-6 pb-8">
+      {/* Header - Option A Layout */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex items-center justify-between"
+        className="space-y-4"
       >
-        <div className="flex items-center space-x-4">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => router.push(`/events/${eventId}`)}
-            leftIcon={<ArrowLeft size={18} />}
-          >
-            Back to Event
-          </Button>
-          <div>
-            <h1 className="text-3xl font-lato font-black text-warm-800">
+        {/* Back Button - Separate Row */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => router.push(`/events/${eventId}`)}
+          leftIcon={<ArrowLeft size={18} />}
+        >
+          Back to Event
+        </Button>
+
+        {/* Title and Add Button Row */}
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1 min-w-0">
+            <h1 className="text-2xl font-lato font-bold text-warm-800 break-words leading-tight">
               {event.title} Wishlist
             </h1>
-            <p className="text-warm-600">
+            <p className="text-warm-600 text-sm mt-2">
               {isOwner ? 'Manage your wishlist items' : `${event.ownerName}'s wishlist`}
             </p>
           </div>
-        </div>
 
-        {isOwner && !hasEventPassed && (
-          <Button
-            variant="primary"
-            onClick={() => setShowAddItemModal(true)}
-            rightIcon={<Plus size={20} />}
-          >
-            Add Item
-          </Button>
-        )}
+          {isOwner && !hasEventPassed && (
+            <Button
+              variant="primary"
+              onClick={() => setShowAddItemModal(true)}
+              rightIcon={<Plus size={20} />}
+              className="flex-shrink-0"
+            >
+              Add Item
+            </Button>
+          )}
+        </div>
       </motion.div>
+
       {/* Wishlist Items */}
       <AnimatePresence mode="wait">
         {items.length === 0 ? (
@@ -247,6 +252,8 @@ export default function WishlistPage() {
           >
             {items.map((item, index) => {
               const priorityInfo = getPriorityIcon(item.priority)
+              const hasUrl = Boolean(item.itemUrl)
+              
               return (
                 <motion.div
                   key={item.id}
@@ -322,57 +329,74 @@ export default function WishlistPage() {
                     )}
 
                     {/* Actions */}
-                    <div className="flex space-x-2">
-                      {item.itemUrl && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="flex-1"
-                          leftIcon={<ExternalLink size={16} />}
-                          onClick={() => window.open(item.itemUrl, '_blank')}
-                        >
-                          View
-                        </Button>
-                      )}
-                      
-                      {!isOwner && !item.isPledged && !hasEventPassed && (
-                        <Button
-                          variant="primary"
-                          size="sm"
-                          className="flex-1"
-                          leftIcon={<Gift size={16} />}
-                          onClick={() => handlePledgeItem(item.id)}
-                        >
-                          Pledge Gift
-                        </Button>
-                      )}
-                      
-                      {!isOwner && item.myPledge && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="flex-1"
-                          leftIcon={item.myPledge.status === 'purchased' ? <Check size={16} /> : <Package size={16} />}
-                          disabled={item.myPledge.status === 'purchased'}
-                        >
-                          {item.myPledge.status === 'purchased' ? 'Purchased' : 'Mark Bought'}
-                        </Button>
-                      )}
-                      
+                    <div className="space-y-2">
+                      {/* Owner Actions - Always show View button (disabled if no URL) */}
                       {isOwner && !hasEventPassed && (
                         <>
-                          <Button variant="ghost" size="sm" leftIcon={<Edit3 size={16} />}>
-                            Edit
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            leftIcon={<Trash2 size={16} />}
-                            className="text-red-600 hover:text-red-700"
-                          >
-                            Delete
-                          </Button>
+                          <div className="flex space-x-2">
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="flex-1"
+                              leftIcon={<ExternalLink size={16} />}
+                              onClick={() => hasUrl && window.open(item.itemUrl, '_blank')}
+                              disabled={!hasUrl}
+                            >
+                              View
+                            </Button>
+                            <Button variant="ghost" size="sm" className="flex-1" leftIcon={<Edit3 size={16} />}>
+                              Edit
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="flex-1 text-red-600 hover:text-red-700 hover:bg-red-50"
+                              leftIcon={<Trash2 size={16} />}
+                            >
+                              Delete
+                            </Button>
+                          </div>
                         </>
+                      )}
+
+                      {/* Friend Actions */}
+                      {!isOwner && (
+                        <div className="flex space-x-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="flex-1"
+                            leftIcon={<ExternalLink size={16} />}
+                            onClick={() => hasUrl && window.open(item.itemUrl, '_blank')}
+                            disabled={!hasUrl}
+                          >
+                            View
+                          </Button>
+                          
+                          {!item.isPledged && !hasEventPassed && (
+                            <Button
+                              variant="primary"
+                              size="sm"
+                              className="flex-1"
+                              leftIcon={<Gift size={16} />}
+                              onClick={() => handlePledgeItem(item.id)}
+                            >
+                              Pledge
+                            </Button>
+                          )}
+                          
+                          {item.myPledge && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="flex-1"
+                              leftIcon={item.myPledge.status === 'purchased' ? <Check size={16} /> : <Package size={16} />}
+                              disabled={item.myPledge.status === 'purchased'}
+                            >
+                              {item.myPledge.status === 'purchased' ? 'Bought' : 'Mark'}
+                            </Button>
+                          )}
+                        </div>
                       )}
                     </div>
                   </Card>

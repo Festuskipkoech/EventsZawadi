@@ -75,8 +75,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         </div>
 
         {/* Glow effect */}
-        <div className="absolute inset-0 rounded-inherit bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
-      </motion.button>
+        <div className="absolute inset-0 rounded-inherit bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 pointer-events-none" />      </motion.button>
     )
   }
 )
