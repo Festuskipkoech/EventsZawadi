@@ -65,7 +65,7 @@ export default function Navbar() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             
-            {/* Logo */}
+            {/* Logo - Fixed Brand Color */}
             <Link href="/dashboard" className="flex items-center space-x-3 group">
               <motion.div 
                 className="w-10 h-10 bg-gradient-to-br from-brand-500 to-brand-600 rounded-2xl flex items-center justify-center transform group-hover:scale-110 transition-transform duration-200"
@@ -73,7 +73,7 @@ export default function Navbar() {
               >
                 <Gift className="w-6 h-6 text-white" />
               </motion.div>
-              <span className="text-2xl font-lato font-black text-warm-800 group-hover:text-brand-600 transition-colors">
+              <span className="text-2xl font-lato font-black bg-gradient-to-r from-brand-600 to-brand-700 bg-clip-text text-transparent group-hover:from-brand-500 group-hover:to-brand-600 transition-all">
                 Events Zawadi
               </span>
             </Link>
@@ -100,6 +100,7 @@ export default function Navbar() {
 
             {/* Right Side Actions */}
             <div className="flex items-center space-x-4">
+              {/* Improved Notification Bell */}
               <NotificationBell />
               
               {/* Profile Button */}
@@ -137,7 +138,7 @@ export default function Navbar() {
         </div>
       </nav>
 
-      {/* Mobile Top Bar */}
+      {/* Mobile Top Bar - Fixed Brand Color */}
       <div className="md:hidden sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-warm-200 shadow-sm">
         <div className="px-4 py-3 flex items-center justify-between">
           {/* Logo */}
@@ -145,7 +146,7 @@ export default function Navbar() {
             <div className="w-8 h-8 bg-gradient-to-br from-brand-500 to-brand-600 rounded-xl flex items-center justify-center">
               <Gift className="w-5 h-5 text-white" />
             </div>
-            <span className="text-lg font-lato font-black text-warm-800">
+            <span className="text-lg font-lato font-black bg-gradient-to-r from-brand-600 to-brand-700 bg-clip-text text-transparent">
               Events Zawadi
             </span>
           </Link>
@@ -253,7 +254,7 @@ export default function Navbar() {
                       exit={{ opacity: 0 }}
                       className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[60]"
                       onClick={() => setIsMoreMenuOpen(false)}
-                      style={{ bottom: '80px' }} // Don't cover bottom tabs
+                      style={{ bottom: '80px' }}
                     />
 
                     {/* Compact Menu */}

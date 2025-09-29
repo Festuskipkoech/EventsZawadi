@@ -75,154 +75,148 @@ export default function EventsPage() {
 
     try {
       await apiService.deleteEvent(eventId)
-      // Reload events list or redirect as needed
-      if (typeof loadEvents === 'function') {
-        await loadEvents() // For events page
-      } else {
-        router.push('/events') // For event details page
-      }
+      await loadEvents()
     } catch (error: any) {
       toast.error(error.message || 'Failed to delete event')
     }
   }
 
-
-const EventCard = ({ event, isOwnEvent = false }: { event: Event, isOwnEvent?: boolean }) => {
-  const daysUntil = getDaysUntil(event.eventDate)
-  const isPast = daysUntil <= 0
-  const hasItems = (event.wishlistItemsCount || 0) > 0
-  
-  return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      transition={{ duration: 0.4 }}
-      className="w-full"
-    >
-      <Card className="p-6 group relative overflow-hidden w-full">
-        {/* Background Pattern */}
-        <div className="absolute inset-0 bg-gradient-to-br from-brand-50/50 via-transparent to-ocean-50/50 pointer-events-none" />
-        
-        <div className="relative z-10">
-          {/* Header */}
-          <div className="flex items-start justify-between mb-4 gap-3">
-            <div className="flex-1 min-w-0">
-              {/* Event Title */}
-              <h3 className="text-xl font-lato font-bold text-warm-800 mb-2 group-hover:text-brand-600 transition-colors truncate">
-                {event.title}
-              </h3>
-              
-              {/* Owner Info - Show for friends' events */}
-              {!isOwnEvent && event.owner && (
-                <div className="flex items-center space-x-2 mb-2">
-                  <div className="w-6 h-6 rounded-full bg-gradient-to-br from-brand-400 to-ocean-400 flex items-center justify-center text-white font-bold text-xs">
-                    {event.owner.name.charAt(0).toUpperCase()}
+  const EventCard = ({ event, isOwnEvent = false }: { event: Event, isOwnEvent?: boolean }) => {
+    const daysUntil = getDaysUntil(event.eventDate)
+    const isPast = daysUntil <= 0
+    const hasItems = (event.wishlistItemsCount || 0) > 0
+    
+    return (
+      <motion.div
+        layout
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -20 }}
+        transition={{ duration: 0.4 }}
+        className="w-full"
+      >
+        <Card className="p-5 group relative overflow-hidden w-full">
+          {/* Background Pattern */}
+          <div className="absolute inset-0 bg-gradient-to-br from-brand-50/50 via-transparent to-ocean-50/50 pointer-events-none" />
+          
+          <div className="relative z-10">
+            {/* Header */}
+            <div className="flex items-start justify-between mb-3 gap-3">
+              <div className="flex-1 min-w-0">
+                {/* Event Title */}
+                <h3 className="text-lg font-lato font-bold text-warm-800 mb-2 group-hover:text-brand-600 transition-colors truncate">
+                  {event.title}
+                </h3>
+                
+                {/* Owner Info - Show for friends' events */}
+                {!isOwnEvent && event.owner && (
+                  <div className="flex items-center space-x-2 mb-2">
+                    <div className="w-5 h-5 rounded-full bg-gradient-to-br from-brand-400 to-ocean-400 flex items-center justify-center text-white font-bold text-xs">
+                      {event.owner.name.charAt(0).toUpperCase()}
+                    </div>
+                    <p className="text-sm font-medium text-brand-600">
+                      {event.owner.name}'s Event
+                    </p>
                   </div>
-                  <p className="text-sm font-medium text-brand-600">
-                    {event.owner.name}'s Event
-                  </p>
-                </div>
-              )}
-              
-              <p className="text-warm-600 text-sm mb-3">
-                {formatDate(event.eventDate)} • {event.eventType}
-              </p>
-              {event.description && (
-                <p className="text-warm-500 text-sm line-clamp-2">
-                  {event.description}
+                )}
+                
+                <p className="text-warm-600 text-sm mb-2">
+                  {formatDate(event.eventDate)} • {event.eventType}
                 </p>
-              )}
+                {event.description && (
+                  <p className="text-warm-500 text-sm line-clamp-2">
+                    {event.description}
+                  </p>
+                )}
+              </div>
+              
+              <div className={`px-2 py-1 rounded-full text-xs font-bold whitespace-nowrap flex-shrink-0 ${
+                isPast 
+                  ? 'bg-warm-100 text-warm-600' 
+                  : daysUntil <= 7 
+                  ? 'bg-red-100 text-red-700' 
+                  : daysUntil <= 30 
+                  ? 'bg-yellow-100 text-yellow-700'
+                  : 'bg-green-100 text-green-700'
+              }`}>
+                {isPast ? 'Past' : `${daysUntil} days`}
+              </div>
             </div>
-            
-            <div className={`px-3 py-1 rounded-full text-sm font-bold whitespace-nowrap flex-shrink-0 ${
-              isPast 
-                ? 'bg-warm-100 text-warm-600' 
-                : daysUntil <= 7 
-                ? 'bg-red-100 text-red-700' 
-                : daysUntil <= 30 
-                ? 'bg-yellow-100 text-yellow-700'
-                : 'bg-green-100 text-green-700'
-            }`}>
-              {isPast ? 'Past' : `${daysUntil} days`}
-            </div>
-          </div>
 
-          {/* Stats */}
-          <div className="flex items-center space-x-4 mb-4">
-            <div className="flex items-center space-x-2 text-sm">
-              <Gift className="w-4 h-4 text-brand-500" />
-              <span className="font-medium text-warm-700">
-                {event.wishlistItemsCount || 0} items
-              </span>
-            </div>
-            {!isOwnEvent && (
+            {/* Stats */}
+            <div className="flex items-center space-x-4 mb-3">
               <div className="flex items-center space-x-2 text-sm">
-                <Users className="w-4 h-4 text-ocean-500" />
+                <Gift className="w-4 h-4 text-brand-500" />
                 <span className="font-medium text-warm-700">
-                  Friend's Event
+                  {event.wishlistItemsCount || 0} items
                 </span>
               </div>
-            )}
-          </div>
+              {!isOwnEvent && (
+                <div className="flex items-center space-x-2 text-sm">
+                  <Users className="w-4 h-4 text-ocean-500" />
+                  <span className="font-medium text-warm-700">
+                    Friend's Event
+                  </span>
+                </div>
+              )}
+            </div>
 
-          {/* Actions - Updated for friends' events */}
-          <div className="space-y-3">
-            {/* Edit/Delete only for owners */}
-            {isOwnEvent && (
-              <div className="flex items-center space-x-2">
-                <Link href={`/events/${event.id}/edit`} className="flex-1">
-                  <Button variant="ghost" size="sm" className="w-full" leftIcon={<Edit3 size={16} />}>
-                    Edit
+            {/* Actions */}
+            <div className="space-y-2">
+              {/* Edit/Delete only for owners */}
+              {isOwnEvent && (
+                <div className="flex items-center space-x-2">
+                  <Link href={`/events/${event.id}/edit`} className="flex-1">
+                    <Button variant="ghost" size="sm" className="w-full" leftIcon={<Edit3 size={14} />}>
+                      Edit
+                    </Button>
+                  </Link>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="flex-1 text-red-600 hover:text-red-700 hover:bg-red-50"
+                    leftIcon={<Trash2 size={14} />}
+                    onClick={() => handleDeleteEvent(event.id, event.title)}
+                  >
+                    Delete
                   </Button>
-                </Link>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="flex-1 text-red-600 hover:text-red-700 hover:bg-red-50"
-                  leftIcon={<Trash2 size={16} />}
-                  onClick={() => handleDeleteEvent(event.id, event.title)}
-                >
-                  Delete
-                </Button>
-              </div>
-            )}
+                </div>
+              )}
 
-            {/* Primary Action - Updated for friends */}
-            {isOwnEvent ? (
-              hasItems ? (
-                <Link href={`/events/${event.id}/wishlist`} className="block">
-                  <Button variant="outline" size="sm" className="w-full" leftIcon={<Eye size={16} />}>
-                    View Wishlist
-                  </Button>
-                </Link>
+              {/* Primary Action */}
+              {isOwnEvent ? (
+                hasItems ? (
+                  <Link href={`/events/${event.id}/wishlist`} className="block">
+                    <Button variant="outline" size="sm" className="w-full" leftIcon={<Eye size={14} />}>
+                      View Wishlist
+                    </Button>
+                  </Link>
+                ) : (
+                  <Link href={`/events/${event.id}/wishlist`} className="block">
+                    <Button variant="primary" size="sm" className="w-full" leftIcon={<Plus size={14} />}>
+                      Add First Item
+                    </Button>
+                  </Link>
+                )
               ) : (
-                <Link href={`/events/${event.id}/wishlist`} className="block">
-                  <Button variant="primary" size="sm" className="w-full" leftIcon={<Plus size={16} />}>
-                    Add First Item
+                hasItems ? (
+                  <Link href={`/events/${event.id}/wishlist`} className="block">
+                    <Button variant="primary" size="sm" className="w-full" leftIcon={<Gift size={14} />}>
+                      View Wishlist & Shop
+                    </Button>
+                  </Link>
+                ) : (
+                  <Button variant="ghost" size="sm" className="w-full" disabled>
+                    No Items Yet
                   </Button>
-                </Link>
-              )
-            ) : (
-              hasItems ? (
-                <Link href={`/events/${event.id}/wishlist`} className="block">
-                  <Button variant="primary" size="sm" className="w-full" leftIcon={<Gift size={16} />}>
-                    View Wishlist & Shop
-                  </Button>
-                </Link>
-              ) : (
-                <Button variant="ghost" size="sm" className="w-full" disabled>
-                  No Items Yet
-                </Button>
-              )
-            )}
+                )
+              )}
+            </div>
           </div>
-        </div>
-      </Card>
-    </motion.div>
-  )
-}
+        </Card>
+      </motion.div>
+    )
+  }
 
   if (loading) {
     return (
@@ -241,14 +235,14 @@ const EventCard = ({ event, isOwnEvent = false }: { event: Event, isOwnEvent?: b
   const displayEvents = filteredEvents(currentEvents)
 
   return (
-    <div className="space-y-6 w-full max-w-full overflow-x-hidden">
-      {/* Header - Option A Layout */}
+    <div className="space-y-6">
+      {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="space-y-4"
       >
-        {/* Title and Description with Create Button (Desktop) */}
+        {/* Title and Description with Create Button */}
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
           <div className="flex-1">
             <h1 className="text-3xl font-lato font-black text-warm-800 mb-2">
@@ -288,7 +282,7 @@ const EventCard = ({ event, isOwnEvent = false }: { event: Event, isOwnEvent?: b
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key as 'mine' | 'friends')}
-                className={`px-8 py-3 rounded-2xl font-inter font-semibold transition-all duration-200 ${
+                className={`px-6 py-2 rounded-2xl font-inter font-semibold transition-all duration-200 ${
                   activeTab === tab.key
                     ? 'bg-gradient-to-r from-brand-500 to-brand-600 text-white shadow-xl transform scale-105'
                     : 'text-warm-700 hover:text-brand-600 hover:bg-brand-50'
@@ -301,9 +295,9 @@ const EventCard = ({ event, isOwnEvent = false }: { event: Event, isOwnEvent?: b
         </div>
       </motion.div>
 
-      {/* Filters - All in one card, no side panel */}
-      <Card className="p-6 w-full">
-        <div className="flex flex-col lg:flex-row gap-4 w-full">
+      {/* Filters - Compact design */}
+      <Card className="p-4 overflow-visible">
+        <div className="flex flex-col lg:flex-row gap-3">
           {/* Search */}
           <div className="flex-1">
             <Input
@@ -373,7 +367,7 @@ const EventCard = ({ event, isOwnEvent = false }: { event: Event, isOwnEvent?: b
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full"
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
           >
             {displayEvents.map((event) => (
               <EventCard 
