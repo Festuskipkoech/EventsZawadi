@@ -25,7 +25,9 @@ interface FriendRequestData {
   createdAt: string
   expiresAt: string
 }
-
+export async function generateStaticParams() {
+  return [];
+}
 export default function AcceptFriendPage() {
   const params = useParams()
   const router = useRouter()

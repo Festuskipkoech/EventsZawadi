@@ -22,7 +22,9 @@ import {
   TrendingUp
 } from 'lucide-react'
 import toast from 'react-hot-toast'
-
+export async function generateStaticParams() {
+  return [];
+}
 export default function EventDetailsPage() {
   const params = useParams()
   const router = useRouter()
@@ -176,9 +178,9 @@ export default function EventDetailsPage() {
           {/* Desktop Actions */}
           {isOwner && (
             <div className="hidden md:flex space-x-2 flex-shrink-0">
-              <Button variant="secondary" size="sm" leftIcon={<Share2 size={16} />}>
+              {/* <Button variant="secondary" size="sm" leftIcon={<Share2 size={16} />}>
                 Share
-              </Button>
+              </Button> */}
               <Link href={`/events/${event.id}/edit`}>
                 <Button variant="outline" size="sm" leftIcon={<Edit3 size={16} />}>
                   Edit
@@ -219,10 +221,10 @@ export default function EventDetailsPage() {
                     className="absolute right-0 top-full mt-2 w-48 bg-white rounded-2xl shadow-xl border border-warm-200 py-2 overflow-visible"
                     style={{ zIndex: 9999 }}
                   >
-                    <button className="w-full flex items-center space-x-3 px-4 py-2 hover:bg-warm-50 transition-colors text-left">
+                    {/* <button className="w-full flex items-center space-x-3 px-4 py-2 hover:bg-warm-50 transition-colors text-left">
                       <Share2 size={16} className="text-brand-500" />
                       <span className="text-warm-700">Share</span>
-                    </button>
+                    </button> */}
                     <Link href={`/events/${event.id}/edit`}>
                       <button className="w-full flex items-center space-x-3 px-4 py-2 hover:bg-warm-50 transition-colors text-left">
                         <Edit3 size={16} className="text-ocean-500" />

@@ -345,7 +345,7 @@ export default function DashboardPage() {
                   Create Event
                 </Button>
               </Link>
-              <Link href="/friends/add">
+              <Link href="/friends">
                 <Button variant="secondary" size="sm" className="w-full justify-start" leftIcon={<Users size={16} />}>
                   Add Friends
                 </Button>

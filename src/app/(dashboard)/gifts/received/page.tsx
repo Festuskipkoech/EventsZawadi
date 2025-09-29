@@ -16,7 +16,8 @@ import {
   Image as ImageIcon,
   Sparkles,
   EyeOff,
-  Eye
+  Eye,
+  TrendingUp
 } from 'lucide-react'
 
 export default function ReceivedGiftsPage() {
@@ -49,6 +50,13 @@ export default function ReceivedGiftsPage() {
     return true
   })
 
+  const stats = {
+    total: gifts.length,
+    revealed: gifts.filter(g => g.event && new Date(g.event.date) < new Date()).length,
+    hidden: gifts.filter(g => g.event && new Date(g.event.date) >= new Date()).length,
+    withPhotos: gifts.filter(g => g.hasImage).length
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -63,99 +71,156 @@ export default function ReceivedGiftsPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto space-y-6">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex items-center justify-between"
+        className="space-y-3"
       >
-        <div className="flex items-center space-x-4">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => router.push('/gifts')}
-            leftIcon={<ArrowLeft size={18} />}
-          >
-            Back to Gifts
-          </Button>
-          <div>
-            <h1 className="text-3xl font-lato font-black text-warm-800">
-              Received Gifts 💝
-            </h1>
-            <p className="text-warm-600">
-              All the wonderful surprises you've received from friends
-            </p>
-          </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => router.push('/gifts')}
+          leftIcon={<ArrowLeft size={18} />}
+        >
+          Back to Gifts
+        </Button>
+        
+        <div>
+          <h1 className="text-3xl font-lato font-black text-warm-800 mb-2">
+            Received Gifts
+          </h1>
+          <p className="text-warm-600">
+            All the wonderful surprises you've received from friends
+          </p>
         </div>
       </motion.div>
 
       {/* Filter Tabs */}
-      <div className="flex justify-center">
-        <div className="bg-white/70 backdrop-blur-sm rounded-3xl p-2 border-2 border-brand-200 shadow-lg">
+      <div className="px-1">
+        <div className="inline-flex bg-white/50 backdrop-blur-sm rounded-2xl p-1 border border-warm-200">
           {[
-            { key: 'all', label: 'All Gifts', icon: Heart },
+            { key: 'all', label: 'All', icon: Heart },
             { key: 'revealed', label: 'Revealed', icon: Eye },
             { key: 'hidden', label: 'Hidden', icon: EyeOff }
           ].map((tab) => (
             <button
               key={tab.key}
               onClick={() => setFilter(tab.key as 'all' | 'revealed' | 'hidden')}
-              className={`flex items-center space-x-2 px-6 py-3 rounded-2xl font-inter font-semibold transition-all duration-200 ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl font-inter font-semibold text-sm transition-all duration-200 whitespace-nowrap ${
                 filter === tab.key
-                  ? 'bg-gradient-to-r from-brand-500 to-brand-600 text-white shadow-xl transform scale-105'
-                  : 'text-warm-700 hover:text-brand-600 hover:bg-brand-50'
+                  ? 'bg-gradient-to-r from-brand-500 to-brand-600 text-white shadow-md'
+                  : 'text-warm-700 hover:text-brand-600 hover:bg-white/70'
               }`}
             >
-              <tab.icon size={18} />
+              <tab.icon size={16} />
               <span>{tab.label}</span>
             </button>
           ))}
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card className="p-6 text-center">
-          <div className="w-12 h-12 bg-gradient-to-br from-brand-500 to-brand-600 rounded-2xl flex items-center justify-center mx-auto mb-3">
-            <Heart className="w-6 h-6 text-white" />
-          </div>
-          <h3 className="text-2xl font-lato font-black text-warm-800">
-            {gifts.length}
-          </h3>
-          <p className="text-sm text-warm-600 font-medium">Total Gifts</p>
-        </Card>
+      {/* Stats - Desktop: 3 columns, Mobile: Summary card */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+      >
+        {/* Desktop Stats */}
+        <div className="hidden md:grid grid-cols-3 gap-6">
+          <Card className="p-6 text-center">
+            <div className="w-12 h-12 bg-gradient-to-br from-brand-500 to-brand-600 rounded-2xl flex items-center justify-center mx-auto mb-3">
+              <Heart className="w-6 h-6 text-white" />
+            </div>
+            <h3 className="text-2xl font-lato font-black text-warm-800">
+              {stats.total}
+            </h3>
+            <p className="text-sm text-warm-600 font-medium">Total Gifts</p>
+          </Card>
 
-        <Card className="p-6 text-center">
-          <div className="w-12 h-12 bg-gradient-to-br from-nature-500 to-nature-600 rounded-2xl flex items-center justify-center mx-auto mb-3">
-            <Eye className="w-6 h-6 text-white" />
-          </div>
-          <h3 className="text-2xl font-lato font-black text-warm-800">
-            {gifts.filter(g => g.event && new Date(g.event.date) < new Date()).length}
-          </h3>
-          <p className="text-sm text-warm-600 font-medium">Revealed</p>
-        </Card>
+          <Card className="p-6 text-center">
+            <div className="w-12 h-12 bg-gradient-to-br from-nature-500 to-nature-600 rounded-2xl flex items-center justify-center mx-auto mb-3">
+              <Eye className="w-6 h-6 text-white" />
+            </div>
+            <h3 className="text-2xl font-lato font-black text-warm-800">
+              {stats.revealed}
+            </h3>
+            <p className="text-sm text-warm-600 font-medium">Revealed</p>
+          </Card>
 
-        <Card className="p-6 text-center">
-          <div className="w-12 h-12 bg-gradient-to-br from-ocean-500 to-ocean-600 rounded-2xl flex items-center justify-center mx-auto mb-3">
-            <EyeOff className="w-6 h-6 text-white" />
-          </div>
-          <h3 className="text-2xl font-lato font-black text-warm-800">
-            {gifts.filter(g => g.event && new Date(g.event.date) >= new Date()).length}
-          </h3>
-          <p className="text-sm text-warm-600 font-medium">Surprises</p>
-        </Card>
+          <Card className="p-6 text-center">
+            <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mx-auto mb-3">
+              <EyeOff className="w-6 h-6 text-white" />
+            </div>
+            <h3 className="text-2xl font-lato font-black text-warm-800">
+              {stats.hidden}
+            </h3>
+            <p className="text-sm text-warm-600 font-medium">Surprises</p>
+          </Card>
+        </div>
 
-        <Card className="p-6 text-center">
-          <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mx-auto mb-3">
-            <Sparkles className="w-6 h-6 text-white" />
-          </div>
-          <h3 className="text-2xl font-lato font-black text-warm-800">
-            {gifts.filter(g => g.hasImage).length}
-          </h3>
-          <p className="text-sm text-warm-600 font-medium">With Photos</p>
-        </Card>
-      </div>
+        {/* Mobile Summary Card */}
+        <div className="md:hidden">
+          <Card className="p-5">
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-lg font-lato font-bold text-warm-800 flex items-center">
+                <TrendingUp className="w-5 h-5 mr-2 text-brand-500" />
+                Summary
+              </h3>
+            </div>
+            
+            <div className="grid grid-cols-3 gap-4">
+              <div className="text-center">
+                <div className="w-8 h-8 bg-gradient-to-br from-brand-500 to-brand-600 rounded-xl flex items-center justify-center mx-auto mb-2">
+                  <Heart className="w-4 h-4 text-white" />
+                </div>
+                <p className="text-xl font-lato font-black text-warm-800 leading-none">
+                  {stats.total}
+                </p>
+                <p className="text-xs font-inter font-semibold text-warm-600 leading-tight">
+                  Total
+                </p>
+              </div>
+              
+              <div className="text-center">
+                <div className="w-8 h-8 bg-gradient-to-br from-nature-500 to-nature-600 rounded-xl flex items-center justify-center mx-auto mb-2">
+                  <Eye className="w-4 h-4 text-white" />
+                </div>
+                <p className="text-xl font-lato font-black text-warm-800 leading-none">
+                  {stats.revealed}
+                </p>
+                <p className="text-xs font-inter font-semibold text-warm-600 leading-tight">
+                  Revealed
+                </p>
+              </div>
+              
+              <div className="text-center">
+                <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center mx-auto mb-2">
+                  <EyeOff className="w-4 h-4 text-white" />
+                </div>
+                <p className="text-xl font-lato font-black text-warm-800 leading-none">
+                  {stats.hidden}
+                </p>
+                <p className="text-xs font-inter font-semibold text-warm-600 leading-tight">
+                  Surprises
+                </p>
+              </div>
+            </div>
+
+            {stats.withPhotos > 0 && (
+              <div className="mt-4 pt-4 border-t border-warm-200">
+                <div className="flex items-center justify-center space-x-2 text-warm-600">
+                  <ImageIcon className="w-4 h-4" />
+                  <span className="text-sm font-medium">
+                    {stats.withPhotos} gift{stats.withPhotos !== 1 ? 's' : ''} with photos
+                  </span>
+                </div>
+              </div>
+            )}
+          </Card>
+        </div>
+      </motion.div>
 
       {/* Gifts List */}
       <AnimatePresence mode="wait">
@@ -167,11 +232,11 @@ export default function ReceivedGiftsPage() {
             exit={{ opacity: 0 }}
           >
             <Card className="p-12 text-center">
-              <Heart className="w-20 h-20 text-warm-300 mx-auto mb-6" />
-              <h3 className="text-2xl font-lato font-bold text-warm-600 mb-4">
+              <Heart className="w-16 h-16 md:w-20 md:h-20 text-warm-300 mx-auto mb-6" />
+              <h3 className="text-xl md:text-2xl font-lato font-bold text-warm-600 mb-4">
                 No gifts {filter === 'all' ? 'yet' : filter === 'revealed' ? 'revealed yet' : 'hidden'}
               </h3>
-              <p className="text-warm-500 max-w-md mx-auto">
+              <p className="text-warm-500 max-w-md mx-auto text-sm md:text-base">
                 {filter === 'all' 
                   ? "When friends pledge gifts for your events, they'll appear here. Create events and share them with friends to start receiving gifts!"
                   : filter === 'revealed'
@@ -202,9 +267,9 @@ export default function ReceivedGiftsPage() {
                   <Card className="p-6">
                     {/* Header */}
                     <div className="flex items-start justify-between mb-4">
-                      <div className="flex-1">
+                      <div className="flex-1 min-w-0">
                         <h3 className="text-lg font-lato font-bold text-warm-800 mb-2">
-                          {isRevealed ? gift.item.title : '🎁 Surprise Gift!'}
+                          {isRevealed ? gift.item.title : 'Surprise Gift!'}
                         </h3>
                         
                         {gift.item.description && isRevealed && (
@@ -213,23 +278,23 @@ export default function ReceivedGiftsPage() {
                           </p>
                         )}
                         
-                        <div className="flex items-center space-x-4 text-sm text-warm-500">
+                        <div className="flex items-center flex-wrap gap-2 text-sm text-warm-500">
                           <div className="flex items-center space-x-1">
                             <Calendar className="w-4 h-4" />
                             <span>{formatDate(gift.event.date)}</span>
                           </div>
                           <span>•</span>
-                          <span>{gift.event.title}</span>
+                          <span className="truncate">{gift.event.title}</span>
                         </div>
                       </div>
                       
-                      <div className={`px-3 py-1 rounded-full text-xs font-bold flex items-center space-x-1 ${
+                      <div className={`px-3 py-1 rounded-full text-xs font-bold flex items-center space-x-1 flex-shrink-0 ml-2 ${
                         isRevealed 
                           ? 'bg-nature-100 text-nature-700'
                           : 'bg-purple-100 text-purple-700'
                       }`}>
                         {isRevealed ? <Eye size={12} /> : <EyeOff size={12} />}
-                        <span>{isRevealed ? 'Revealed' : 'Surprise'}</span>
+                        <span className="hidden sm:inline">{isRevealed ? 'Revealed' : 'Surprise'}</span>
                       </div>
                     </div>
 
@@ -240,7 +305,7 @@ export default function ReceivedGiftsPage() {
                           <div className="flex items-center space-x-2 mb-2">
                             <User className="w-4 h-4 text-brand-500" />
                             <span className="font-semibold text-brand-700">
-                              From: Secret Friend ✨
+                              From: Secret Friend
                             </span>
                           </div>
                           
@@ -262,7 +327,7 @@ export default function ReceivedGiftsPage() {
                                 Gift photo included
                               </p>
                               <p className="text-warm-500 text-xs">
-                                Your friend shared a photo of this gift
+                                Your friend shared a photo
                               </p>
                             </div>
                           </div>

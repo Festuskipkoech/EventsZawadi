@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { apiService } from '@/services/api'
@@ -56,7 +57,9 @@ interface WishlistData {
   }
   items: WishlistItem[]
 }
-
+export async function generateStaticParams() {
+  return [];
+}
 export default function WishlistPage() {
   const router = useRouter()
   const params=useParams()
@@ -437,9 +440,11 @@ const getPriorityIcon = (priority: number) => {
                             >
                               View
                             </Button>
-                            <Button variant="ghost" size="sm" className="flex-1" leftIcon={<Edit3 size={16} onClick={() => handleEditItem(item)} />}>
-                              Edit
-                            </Button>
+                            <Link href={`/events/${event.id}/edit`}>
+                              <Button variant="ghost" size="sm" className="flex-1" leftIcon={<Edit3 size={16} onClick={() => handleEditItem(item)} />}>
+                                Edit
+                              </Button>
+                            </Link>
                             <Button 
                               variant="ghost" 
                               size="sm" 
