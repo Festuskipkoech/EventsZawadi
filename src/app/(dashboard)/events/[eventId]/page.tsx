@@ -23,6 +23,10 @@ import {
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
+export async function generateStaticParams() {
+  // Return empty array - events are user-specific and created dynamically
+  return [];
+}
 export default function EventDetailsPage() {
   const params = useParams()
   const router = useRouter()

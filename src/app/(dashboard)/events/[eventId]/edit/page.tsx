@@ -10,6 +10,9 @@ import Input from '@/components/Input'
 import { Calendar, ArrowLeft, Save, Type } from 'lucide-react'
 import toast from 'react-hot-toast'
 
+export async function generateStaticParams() {
+  return [];
+}
 export default function EditEventPage() {
   const router = useRouter()
   const params = useParams()

@@ -25,7 +25,11 @@ interface FriendRequestData {
   createdAt: string
   expiresAt: string
 }
-
+export async function generateStaticParams() {
+  // Return empty array since friend tokens are generated dynamically
+  // and cannot be pre-rendered
+  return [];
+}
 export default function AcceptFriendPage() {
   const params = useParams()
   const router = useRouter()
