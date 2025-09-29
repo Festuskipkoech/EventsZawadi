@@ -41,7 +41,7 @@ export default function DashboardPage() {
   const getRecentActivity = () => {
     const notifications = apiService.getNotifications()
     
-    return notifications.slice(0, 3).map(notification => {
+    return notifications.slice(0, 2).map(notification => {
       let icon = ''
       let message = notification.message
       
@@ -112,7 +112,7 @@ export default function DashboardPage() {
   }
 
   // Function to truncate text with blur effect
-  const truncateText = (text: string, maxLength: number = 60) => {
+  const truncateText = (text: string, maxLength: number = 100) => {
     if (text.length <= maxLength) {
       return { text, isTruncated: false }
     }
@@ -174,7 +174,7 @@ export default function DashboardPage() {
         transition={{ duration: 0.6 }}
         className="text-center md:text-left"
       >
-        <h1 className="text-4xl md:text-5xl font-lato font-black text-warm-800 mb-4">
+        <h1 className="text-3xl md:text-5xl font-lato font-black text-warm-800 mb-4">
           Welcome back, {user?.name?.split(' ')[0]}! ✨
         </h1>
         <p className="text-xl text-warm-600 font-inter">
@@ -182,32 +182,75 @@ export default function DashboardPage() {
         </p>
       </motion.div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {statCards.map((stat, index) => (
-          <motion.div
-            key={stat.title}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: index * 0.1 }}
-          >
-            <Card className="p-6 text-center hover:scale-105 transition-all duration-300">
-              <div className={`w-16 h-16 bg-gradient-to-br ${stat.color} rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-lg`}>
-                <stat.icon className="w-8 h-8 text-white" />
-              </div>
-              <h3 className="text-3xl font-lato font-black text-warm-800 mb-1">
-                {stat.value}
+      {/* Stats - Desktop: Grid, Mobile: Summary Card */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+      >
+        {/* Desktop Stats Grid */}
+        <div className="hidden md:grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {statCards.map((stat, index) => (
+            <motion.div
+              key={stat.title}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: index * 0.1 }}
+            >
+              <Card className="p-6 text-center hover:scale-105 transition-all duration-300">
+                <div className={`w-16 h-16 bg-gradient-to-br ${stat.color} rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-lg`}>
+                  <stat.icon className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-3xl font-lato font-black text-warm-800 mb-1">
+                  {stat.value}
+                </h3>
+                <p className="text-sm font-inter font-semibold text-warm-600 mb-1">
+                  {stat.title}
+                </p>
+                <p className="text-xs text-warm-500">
+                  {stat.description}
+                </p>
+              </Card>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Mobile Summary Card */}
+        <div className="md:hidden">
+          <Card className="p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-lato font-bold text-warm-800 flex items-center">
+                <TrendingUp className="w-6 h-6 mr-3 text-brand-500" />
+                Your Overview
               </h3>
-              <p className="text-sm font-inter font-semibold text-warm-600 mb-1">
-                {stat.title}
-              </p>
-              <p className="text-xs text-warm-500">
-                {stat.description}
-              </p>
-            </Card>
-          </motion.div>
-        ))}
-      </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-6">
+              {statCards.map((stat, index) => (
+                <motion.div
+                  key={stat.title}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.4, delay: index * 0.1 }}
+                  className="flex items-center space-x-3"
+                >
+                  <div className={`w-10 h-10 bg-gradient-to-br ${stat.color} rounded-2xl flex items-center justify-center flex-shrink-0`}>
+                    <stat.icon className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-2xl font-lato font-black text-warm-800 leading-none">
+                      {stat.value}
+                    </p>
+                    <p className="text-sm font-inter font-semibold text-warm-600 leading-tight">
+                      {stat.title}
+                    </p>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </Card>
+        </div>
+      </motion.div>
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

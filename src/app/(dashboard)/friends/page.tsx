@@ -1,7 +1,8 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import Link from 'next/link'
+import { motion} from 'framer-motion'
 import { apiService, Friend } from '@/services/api'
 import { getInitials } from '@/lib/utils'
 import Card from '@/components/Card'
@@ -118,13 +119,13 @@ export default function FriendsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Header - Mobile Optimized */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="flex flex-col md:flex-row md:items-center md:justify-between"
       >
-        <div>
+        <div className="mb-4 md:mb-0">
           <h1 className="text-3xl font-lato font-black text-warm-800 mb-2">
             Friends 👥
           </h1>
@@ -133,41 +134,46 @@ export default function FriendsPage() {
           </p>
         </div>
         
-        <div className="mt-4 md:mt-0 flex space-x-3">
+        {/* Mobile: Horizontal button layout, Desktop: Same as before */}
+        <div className="flex space-x-3 md:mt-0">
           <Button 
             variant="secondary" 
             onClick={handleGenerateLink}
             leftIcon={<LinkIcon size={18} />}
+            className="flex-1 md:flex-none"
           >
-            Share Link
+            <span className="hidden sm:inline">Share Link</span>
+            <span className="sm:hidden">Share</span>
           </Button>
           <Button 
             variant="primary" 
             onClick={() => setShowAddFriendModal(true)}
             rightIcon={<Plus size={20} />}
+            className="flex-1 md:flex-none"
           >
-            Add Friend
+            <span className="hidden sm:inline">Add Friend</span>
+            <span className="sm:hidden">Add</span>
           </Button>
         </div>
       </motion.div>
 
-      {/* Friend Requests */}
+      {/* Friend Requests - Mobile Optimized */}
       {friendRequests.length > 0 && (
-        <Card className="p-6">
-          <h2 className="text-xl font-lato font-bold text-warm-800 mb-4 flex items-center">
+        <Card className="p-4 md:p-6">
+          <h2 className="text-lg md:text-xl font-lato font-bold text-warm-800 mb-4 flex items-center">
             <UserPlus className="w-5 h-5 mr-2 text-brand-500" />
             Friend Requests ({friendRequests.length})
           </h2>
           <div className="space-y-3">
             {friendRequests.map((request) => (
-              <div key={request.id} className="flex items-center justify-between p-4 bg-brand-50 rounded-2xl border border-brand-200">
+              <div key={request.id} className="flex items-center justify-between p-3 md:p-4 bg-brand-50 rounded-2xl border border-brand-200">
                 <div className="flex items-center space-x-3 flex-1 min-w-0">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-brand-400 to-ocean-400 flex items-center justify-center text-white font-bold flex-shrink-0">
+                  <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-brand-400 to-ocean-400 flex items-center justify-center text-white font-bold flex-shrink-0 text-sm md:text-base">
                     {getInitials(request.requester.name)}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-warm-800 truncate">{request.requester.name}</h3>
-                    <p className="text-sm text-warm-600 truncate">{request.requester.email}</p>
+                    <h3 className="font-semibold text-warm-800 truncate text-sm md:text-base">{request.requester.name}</h3>
+                    <p className="text-xs md:text-sm text-warm-600 truncate">{request.requester.email}</p>
                   </div>
                 </div>
                 <div className="flex space-x-2 ml-3 flex-shrink-0">
@@ -175,10 +181,15 @@ export default function FriendsPage() {
                     variant="primary" 
                     size="sm"
                     onClick={() => handleAcceptRequest(request.id)}
+                    className="text-xs px-3 py-1"
                   >
                     Accept
                   </Button>
-                  <Button variant="outline" size="sm">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className="text-xs px-3 py-1"
+                  >
                     Decline
                   </Button>
                 </div>
@@ -188,43 +199,54 @@ export default function FriendsPage() {
         </Card>
       )}
 
-      {/* Search */}
-      <Card className="p-6">
+      {/* Search - Integrated with content instead of separate card */}
+      <div className="px-1">
         <Input
           type="text"
           placeholder="Search friends..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           leftIcon={<Search size={18} />}
+          className="bg-white/70 backdrop-blur-sm border-warm-200"
         />
-      </Card>
+      </div>
 
-      {/* Friends Grid */}
+      {/* Friends Grid - Mobile Optimized */}
       {filteredFriends.length === 0 ? (
-        <Card className="p-12 text-center">
-          <Users className="w-20 h-20 text-warm-300 mx-auto mb-6" />
-          <h3 className="text-2xl font-lato font-bold text-warm-600 mb-4">
+        <Card className="p-8 md:p-12 text-center">
+          <Users className="w-16 h-16 md:w-20 md:h-20 text-warm-300 mx-auto mb-4 md:mb-6" />
+          <h3 className="text-xl md:text-2xl font-lato font-bold text-warm-600 mb-3 md:mb-4">
             {friends.length === 0 ? 'No friends yet' : 'No matching friends'}
           </h3>
-          <p className="text-warm-500 mb-8 max-w-md mx-auto">
+          <p className="text-warm-500 mb-6 md:mb-8 max-w-md mx-auto text-sm md:text-base">
             {friends.length === 0 
               ? "Start building your gifting circle by adding friends!"
               : "Try adjusting your search terms."
             }
           </p>
           {friends.length === 0 && (
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button variant="primary" onClick={() => setShowAddFriendModal(true)} rightIcon={<Plus size={20} />}>
+            <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center">
+              <Button 
+                variant="primary" 
+                onClick={() => setShowAddFriendModal(true)} 
+                rightIcon={<Plus size={20} />}
+                className="text-sm md:text-base"
+              >
                 Add Friend
               </Button>
-              <Button variant="secondary" onClick={handleGenerateLink} leftIcon={<LinkIcon size={20} />}>
+              <Button 
+                variant="secondary" 
+                onClick={handleGenerateLink} 
+                leftIcon={<LinkIcon size={20} />}
+                className="text-sm md:text-base"
+              >
                 Share Your Link
               </Button>
             </div>
           )}
         </Card>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
           {filteredFriends.map((friend, index) => (
             <motion.div
               key={friend.id}
@@ -232,8 +254,8 @@ export default function FriendsPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: index * 0.1 }}
             >
-              <Card className="p-6 text-center hover:scale-105 transition-all duration-300">
-                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-brand-400 to-ocean-400 flex items-center justify-center mx-auto mb-4 text-white font-bold text-xl shadow-lg">
+              <Card className="p-4 md:p-6 text-center hover:scale-105 transition-all duration-300">
+                <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-gradient-to-br from-brand-400 to-ocean-400 flex items-center justify-center mx-auto mb-3 md:mb-4 text-white font-bold text-sm md:text-xl shadow-lg">
                   {friend.avatarUrl ? (
                     <Image
                       src={friend.avatarUrl} 
@@ -246,23 +268,26 @@ export default function FriendsPage() {
                     getInitials(friend.name)
                   )}
                 </div>
-                <h3 className="font-lato font-bold text-warm-800 mb-1">
+                <h3 className="font-lato font-bold text-warm-800 mb-1 text-sm md:text-base truncate">
                   {friend.name}
                 </h3>
-                <p className="text-sm text-warm-600 mb-2">
+                <p className="text-xs md:text-sm text-warm-600 mb-2 truncate">
                   @{friend.friendCode}
                 </p>
-                <p className="text-xs text-warm-500 mb-4">
+                <p className="text-xs text-warm-500 mb-3 md:mb-4 hidden md:block">
                   Friends since {new Date(friend.friendshipDate).toLocaleDateString()}
                 </p>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="w-full"
-                  leftIcon={<Calendar size={16} />}
-                >
-                  View Events
-                </Button>
+                <Link href="/events">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="w-full text-xs md:text-sm"
+                    leftIcon={<Calendar size={14} />}
+                  >
+                    <span className="hidden md:inline">View Events</span>
+                    <span className="md:hidden">Events</span>
+                  </Button>
+                </Link>
               </Card>
             </motion.div>
           ))}

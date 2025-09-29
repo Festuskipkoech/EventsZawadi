@@ -68,127 +68,161 @@ export default function EventsPage() {
     })
   }
 
-  const EventCard = ({ event, isOwnEvent = false }: { event: Event, isOwnEvent?: boolean }) => {
-    const daysUntil = getDaysUntil(event.eventDate)
-    const isPast = daysUntil <= 0
-    const hasItems = (event.wishlistItemsCount || 0) > 0
-    
-    return (
-      <motion.div
-        layout
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -20 }}
-        transition={{ duration: 0.4 }}
-        className="w-full"
-      >
-        <Card className="p-6 group relative overflow-hidden w-full">
-          {/* Background Pattern */}
-          <div className="absolute inset-0 bg-gradient-to-br from-brand-50/50 via-transparent to-ocean-50/50 pointer-events-none" />
-          
-          <div className="relative z-10">
-            {/* Header */}
-            <div className="flex items-start justify-between mb-4 gap-3">
-              <div className="flex-1 min-w-0">
-                <h3 className="text-xl font-lato font-bold text-warm-800 mb-2 group-hover:text-brand-600 transition-colors truncate">
-                  {event.title}
-                </h3>
-                <p className="text-warm-600 text-sm mb-3">
-                  {formatDate(event.eventDate)} • {event.eventType}
-                </p>
-                {event.description && (
-                  <p className="text-warm-500 text-sm line-clamp-2">
-                    {event.description}
-                  </p>
-                )}
-              </div>
+  const handleDeleteEvent = async (eventId: number, eventTitle: string) => {
+    if (!confirm(`Are you sure you want to delete "${eventTitle}"? This will also delete all wishlist items and cannot be undone.`)) {
+      return
+    }
+
+    try {
+      await apiService.deleteEvent(eventId)
+      // Reload events list or redirect as needed
+      if (typeof loadEvents === 'function') {
+        await loadEvents() // For events page
+      } else {
+        router.push('/events') // For event details page
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to delete event')
+    }
+  }
+
+
+const EventCard = ({ event, isOwnEvent = false }: { event: Event, isOwnEvent?: boolean }) => {
+  const daysUntil = getDaysUntil(event.eventDate)
+  const isPast = daysUntil <= 0
+  const hasItems = (event.wishlistItemsCount || 0) > 0
+  
+  return (
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      transition={{ duration: 0.4 }}
+      className="w-full"
+    >
+      <Card className="p-6 group relative overflow-hidden w-full">
+        {/* Background Pattern */}
+        <div className="absolute inset-0 bg-gradient-to-br from-brand-50/50 via-transparent to-ocean-50/50 pointer-events-none" />
+        
+        <div className="relative z-10">
+          {/* Header */}
+          <div className="flex items-start justify-between mb-4 gap-3">
+            <div className="flex-1 min-w-0">
+              {/* Event Title */}
+              <h3 className="text-xl font-lato font-bold text-warm-800 mb-2 group-hover:text-brand-600 transition-colors truncate">
+                {event.title}
+              </h3>
               
-              <div className={`px-3 py-1 rounded-full text-sm font-bold whitespace-nowrap flex-shrink-0 ${
-                isPast 
-                  ? 'bg-warm-100 text-warm-600' 
-                  : daysUntil <= 7 
-                  ? 'bg-red-100 text-red-700' 
-                  : daysUntil <= 30 
-                  ? 'bg-yellow-100 text-yellow-700'
-                  : 'bg-green-100 text-green-700'
-              }`}>
-                {isPast ? 'Past' : `${daysUntil} days`}
-              </div>
-            </div>
-
-            {/* Stats */}
-            <div className="flex items-center space-x-4 mb-4">
-              <div className="flex items-center space-x-2 text-sm">
-                <Gift className="w-4 h-4 text-brand-500" />
-                <span className="font-medium text-warm-700">
-                  {event.wishlistItemsCount || 0} items
-                </span>
-              </div>
-              {event.giftsReceivedCount !== undefined && (
-                <div className="flex items-center space-x-2 text-sm">
-                  <Users className="w-4 h-4 text-ocean-500" />
-                  <span className="font-medium text-warm-700">
-                    {event.giftsReceivedCount} pledged
-                  </span>
+              {/* Owner Info - Show for friends' events */}
+              {!isOwnEvent && event.owner && (
+                <div className="flex items-center space-x-2 mb-2">
+                  <div className="w-6 h-6 rounded-full bg-gradient-to-br from-brand-400 to-ocean-400 flex items-center justify-center text-white font-bold text-xs">
+                    {event.owner.name.charAt(0).toUpperCase()}
+                  </div>
+                  <p className="text-sm font-medium text-brand-600">
+                    {event.owner.name}'s Event
+                  </p>
                 </div>
               )}
+              
+              <p className="text-warm-600 text-sm mb-3">
+                {formatDate(event.eventDate)} • {event.eventType}
+              </p>
+              {event.description && (
+                <p className="text-warm-500 text-sm line-clamp-2">
+                  {event.description}
+                </p>
+              )}
             </div>
-
-            {/* Actions - NEW LAYOUT */}
-            <div className="space-y-3">
-              {/* Top Row: Edit/Delete (only for owners) */}
-              {isOwnEvent && (
-                <div className="flex items-center space-x-2">
-                  <Link href={`/events/${event.id}/edit`} className="flex-1">
-                    <Button variant="ghost" size="sm" className="w-full" leftIcon={<Edit3 size={16} />}>
-                      Edit
-                    </Button>
-                  </Link>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="flex-1 text-red-600 hover:text-red-700 hover:bg-red-50"
-                    leftIcon={<Trash2 size={16} />}
-                  >
-                    Delete
-                  </Button>
-                </div>
-              )}
-
-              {/* Bottom: Primary Action - Full Width */}
-              {isOwnEvent ? (
-                hasItems ? (
-                  <Link href={`/events/${event.id}/wishlist`} className="block">
-                    <Button variant="outline" size="sm" className="w-full" leftIcon={<Eye size={16} />}>
-                      View Wishlist
-                    </Button>
-                  </Link>
-                ) : (
-                  <Link href={`/events/${event.id}/wishlist`} className="block">
-                    <Button variant="primary" size="sm" className="w-full" leftIcon={<Plus size={16} />}>
-                      Add First Item
-                    </Button>
-                  </Link>
-                )
-              ) : (
-                hasItems ? (
-                  <Link href={`/events/${event.id}/wishlist`} className="block">
-                    <Button variant="outline" size="sm" className="w-full" leftIcon={<Eye size={16} />}>
-                      View Wishlist
-                    </Button>
-                  </Link>
-                ) : (
-                  <Button variant="ghost" size="sm" className="w-full" disabled>
-                    No Items Yet
-                  </Button>
-                )
-              )}
+            
+            <div className={`px-3 py-1 rounded-full text-sm font-bold whitespace-nowrap flex-shrink-0 ${
+              isPast 
+                ? 'bg-warm-100 text-warm-600' 
+                : daysUntil <= 7 
+                ? 'bg-red-100 text-red-700' 
+                : daysUntil <= 30 
+                ? 'bg-yellow-100 text-yellow-700'
+                : 'bg-green-100 text-green-700'
+            }`}>
+              {isPast ? 'Past' : `${daysUntil} days`}
             </div>
           </div>
-        </Card>
-      </motion.div>
-    )
-  }
+
+          {/* Stats */}
+          <div className="flex items-center space-x-4 mb-4">
+            <div className="flex items-center space-x-2 text-sm">
+              <Gift className="w-4 h-4 text-brand-500" />
+              <span className="font-medium text-warm-700">
+                {event.wishlistItemsCount || 0} items
+              </span>
+            </div>
+            {!isOwnEvent && (
+              <div className="flex items-center space-x-2 text-sm">
+                <Users className="w-4 h-4 text-ocean-500" />
+                <span className="font-medium text-warm-700">
+                  Friend's Event
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Actions - Updated for friends' events */}
+          <div className="space-y-3">
+            {/* Edit/Delete only for owners */}
+            {isOwnEvent && (
+              <div className="flex items-center space-x-2">
+                <Link href={`/events/${event.id}/edit`} className="flex-1">
+                  <Button variant="ghost" size="sm" className="w-full" leftIcon={<Edit3 size={16} />}>
+                    Edit
+                  </Button>
+                </Link>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="flex-1 text-red-600 hover:text-red-700 hover:bg-red-50"
+                  leftIcon={<Trash2 size={16} />}
+                  onClick={() => handleDeleteEvent(event.id, event.title)}
+                >
+                  Delete
+                </Button>
+              </div>
+            )}
+
+            {/* Primary Action - Updated for friends */}
+            {isOwnEvent ? (
+              hasItems ? (
+                <Link href={`/events/${event.id}/wishlist`} className="block">
+                  <Button variant="outline" size="sm" className="w-full" leftIcon={<Eye size={16} />}>
+                    View Wishlist
+                  </Button>
+                </Link>
+              ) : (
+                <Link href={`/events/${event.id}/wishlist`} className="block">
+                  <Button variant="primary" size="sm" className="w-full" leftIcon={<Plus size={16} />}>
+                    Add First Item
+                  </Button>
+                </Link>
+              )
+            ) : (
+              hasItems ? (
+                <Link href={`/events/${event.id}/wishlist`} className="block">
+                  <Button variant="primary" size="sm" className="w-full" leftIcon={<Gift size={16} />}>
+                    View Wishlist & Shop
+                  </Button>
+                </Link>
+              ) : (
+                <Button variant="ghost" size="sm" className="w-full" disabled>
+                  No Items Yet
+                </Button>
+              )
+            )}
+          </div>
+        </div>
+      </Card>
+    </motion.div>
+  )
+}
 
   if (loading) {
     return (

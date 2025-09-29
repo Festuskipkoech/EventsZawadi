@@ -72,7 +72,19 @@ export default function WishlistPage() {
     priority: 1,
     itemUrl: ''
   })
+  const [editingItem, setEditingItem] = useState<WishlistItem | null>(null)
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [editForm, setEditForm] = useState({
+    title: '',
+    description: '',
+    price: '',
+    priority: 1,
+    itemUrl: ''
+  })
 
+const [showPurchaseModal, setShowPurchaseModal] = useState(false)
+const [selectedPledge, setSelectedPledge] = useState<{ pledgeId: number; itemTitle: string } | null>(null)
+const [purchaseMessage, setPurchaseMessage] = useState('')
   useEffect(() => {
     if (eventId) {
       loadWishlist()
@@ -121,7 +133,71 @@ export default function WishlistPage() {
     }
   }
 
-  const getPriorityIcon = (priority: number) => {
+const handleEditItem = (item: WishlistItem) => {
+  setEditingItem(item)
+  setEditForm({
+    title: item.title,
+    description: item.description || '',
+    price: item.price ? item.price.toString() : '',
+    priority: item.priority,
+    itemUrl: item.itemUrl || ''
+  })
+  setShowEditModal(true)
+}
+
+const handleSaveEdit = async () => {
+  if (!editingItem) return
+
+  try {
+    const updateData = {
+      title: editForm.title,
+      description: editForm.description || undefined,
+      price: editForm.price ? parseFloat(editForm.price) : undefined,
+      priority: editForm.priority,
+      itemUrl: editForm.itemUrl || undefined
+    }
+    
+    await apiService.updateWishlistItem(parseInt(eventId), editingItem.id, updateData)
+    toast.success('Item updated successfully! ✏️')
+    setShowEditModal(false)
+    setEditingItem(null)
+    setEditForm({ title: '', description: '', price: '', priority: 1, itemUrl: '' })
+    await loadWishlist()
+  } catch (error: any) {
+    toast.error(error.message || 'Failed to update item')
+  }
+}
+
+const handleDeleteItem = async (itemId: number, itemTitle: string) => {
+  if (!confirm(`Are you sure you want to delete "${itemTitle}"? This action cannot be undone.`)) {
+    return
+  }
+  try {
+    await apiService.deleteWishlistItem(parseInt(eventId), itemId)
+    await loadWishlist()
+  } catch (error: any) {
+    toast.error(error.message || 'Failed to delete item')
+  }
+}
+
+const handleMarkAsPurchased = async (pledgeId: number, message?: string) => {
+  try {
+    await apiService.markGiftAsPurchased(pledgeId, message)
+    await loadWishlist() // Refresh the wishlist
+    setShowPurchaseModal(false)
+    setSelectedPledge(null)
+    setPurchaseMessage('')
+  } catch (error: any) {
+    toast.error(error.message || 'Failed to mark gift as purchased')
+  }
+}
+
+const handleOpenPurchaseModal = (pledgeId: number, itemTitle: string) => {
+  setSelectedPledge({ pledgeId, itemTitle })
+  setShowPurchaseModal(true)
+}
+
+const getPriorityIcon = (priority: number) => {
     switch (priority) {
       case 1: return { icon: Star, color: 'text-gray-400', bg: 'bg-gray-100' }
       case 2: return { icon: Star, color: 'text-yellow-500', bg: 'bg-yellow-100' }
@@ -130,7 +206,7 @@ export default function WishlistPage() {
       case 5: return { icon: Heart, color: 'text-purple-500', bg: 'bg-purple-100' }
       default: return { icon: Star, color: 'text-gray-400', bg: 'bg-gray-100' }
     }
-  }
+}
 
   if (loading) {
     return (
@@ -171,12 +247,13 @@ export default function WishlistPage() {
   return (
     <div className="max-w-6xl mx-auto space-y-6 pb-8">
       {/* Header - Option A Layout */}
+
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="space-y-4"
       >
-        {/* Back Button - Separate Row */}
+        {/* Back Button */}
         <Button
           variant="ghost"
           size="sm"
@@ -192,9 +269,26 @@ export default function WishlistPage() {
             <h1 className="text-2xl font-lato font-bold text-warm-800 break-words leading-tight">
               {event.title} Wishlist
             </h1>
-            <p className="text-warm-600 text-sm mt-2">
-              {isOwner ? 'Manage your wishlist items' : `${event.ownerName}'s wishlist`}
-            </p>
+            
+            {/* Owner Info */}
+            <div className="flex items-center space-x-2 mt-2">
+              {!isOwner && (
+                <>
+                  <div className="w-6 h-6 rounded-full bg-gradient-to-br from-brand-400 to-ocean-400 flex items-center justify-center text-white font-bold text-xs">
+                    {event.ownerName.charAt(0).toUpperCase()}
+                  </div>
+                  <p className="text-brand-600 font-medium text-sm">
+                    {event.ownerName}'s wishlist
+                  </p>
+                </>
+              )}
+              
+              {isOwner && (
+                <p className="text-warm-600 text-sm">
+                  Manage your wishlist items
+                </p>
+              )}
+            </div>
           </div>
 
           {isOwner && !hasEventPassed && (
@@ -209,7 +303,6 @@ export default function WishlistPage() {
           )}
         </div>
       </motion.div>
-
       {/* Wishlist Items */}
       <AnimatePresence mode="wait">
         {items.length === 0 ? (
@@ -344,7 +437,7 @@ export default function WishlistPage() {
                             >
                               View
                             </Button>
-                            <Button variant="ghost" size="sm" className="flex-1" leftIcon={<Edit3 size={16} />}>
+                            <Button variant="ghost" size="sm" className="flex-1" leftIcon={<Edit3 size={16} onClick={() => handleEditItem(item)} />}>
                               Edit
                             </Button>
                             <Button 
@@ -352,6 +445,7 @@ export default function WishlistPage() {
                               size="sm" 
                               className="flex-1 text-red-600 hover:text-red-700 hover:bg-red-50"
                               leftIcon={<Trash2 size={16} />}
+                              onClick={() => handleDeleteItem(item.id, item.title)}
                             >
                               Delete
                             </Button>
@@ -385,17 +479,18 @@ export default function WishlistPage() {
                             </Button>
                           )}
                           
-                          {item.myPledge && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="flex-1"
-                              leftIcon={item.myPledge.status === 'purchased' ? <Check size={16} /> : <Package size={16} />}
-                              disabled={item.myPledge.status === 'purchased'}
-                            >
-                              {item.myPledge.status === 'purchased' ? 'Bought' : 'Mark'}
-                            </Button>
-                          )}
+                        {item.myPledge && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="flex-1"
+                            leftIcon={item.myPledge.status === 'purchased' ? <Check size={16} /> : <Package size={16} />}
+                            disabled={item.myPledge.status === 'purchased'}
+                            onClick={() => item.myPledge?.status === 'pledged' && handleOpenPurchaseModal(item.myPledge.id, item.title)}
+                          >
+                            {item.myPledge.status === 'purchased' ? 'Bought' : 'Mark as Bought'}
+                          </Button>
+                        )}
                         </div>
                       )}
                     </div>
@@ -499,6 +594,172 @@ export default function WishlistPage() {
           </div>
         </div>
       </Modal>
+      <Modal
+      isOpen={showEditModal}
+      onClose={() => {
+        setShowEditModal(false)
+        setEditingItem(null)
+        setEditForm({ title: '', description: '', price: '', priority: 1, itemUrl: '' })
+      }}
+      title="Edit Wishlist Item"
+      size="lg"
+    >
+      <div className="space-y-6">
+        <Input
+          type="text"
+          label="Item Title"
+          placeholder="e.g., Wireless Headphones"
+          value={editForm.title}
+          onChange={(e) => setEditForm(prev => ({ ...prev, title: e.target.value }))}
+          leftIcon={<Gift size={18} />}
+          variant="floating"
+        />
+
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-warm-700 font-inter">
+            Description (Optional)
+          </label>
+          <textarea
+            rows={3}
+            placeholder="Describe the item or specific preferences..."
+            value={editForm.description}
+            onChange={(e) => setEditForm(prev => ({ ...prev, description: e.target.value }))}
+            className="w-full px-4 py-3 rounded-2xl border-2 border-warm-200 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/20 bg-white/80 backdrop-blur-sm transition-all duration-300 focus:outline-none resize-none"
+          />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Input
+            type="number"
+            label="Price (Optional)"
+            placeholder="0.00"
+            value={editForm.price}
+            onChange={(e) => setEditForm(prev => ({ ...prev, price: e.target.value }))}
+            variant="floating"
+          />
+
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-warm-700 font-inter">
+              Priority
+            </label>
+            <select
+              value={editForm.priority}
+              onChange={(e) => setEditForm(prev => ({ ...prev, priority: parseInt(e.target.value) }))}
+              className="w-full px-4 py-3 rounded-2xl border-2 border-warm-200 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/20 bg-white/80 backdrop-blur-sm transition-all duration-300 focus:outline-none"
+            >
+              <option value={1}>1 - Low Priority</option>
+              <option value={2}>2 - Medium Priority</option>
+              <option value={3}>3 - High Priority</option>
+              <option value={4}>4 - Very High Priority</option>
+              <option value={5}>5 - Must Have!</option>
+            </select>
+          </div>
+        </div>
+
+        <Input
+          type="url"
+          label="Item URL (Optional)"
+          placeholder="https://..."
+          value={editForm.itemUrl}
+          onChange={(e) => setEditForm(prev => ({ ...prev, itemUrl: e.target.value }))}
+          leftIcon={<ExternalLink size={18} />}
+          variant="floating"
+        />
+
+        <div className="flex space-x-3 pt-4">
+          <Button 
+            variant="outline" 
+            className="flex-1"
+            onClick={() => setShowEditModal(false)}
+          >
+            Cancel
+          </Button>
+          <Button 
+            variant="primary" 
+            className="flex-1"
+            onClick={handleSaveEdit}
+            disabled={!editForm.title.trim()}
+            rightIcon={<Edit3 size={18} />}
+          >
+            Save Changes
+          </Button>
+        </div>
+      </div>
+    </Modal>
+    <Modal
+  isOpen={showPurchaseModal}
+  onClose={() => {
+    setShowPurchaseModal(false)
+    setSelectedPledge(null)
+    setPurchaseMessage('')
+  }}
+  title="Mark Gift as Purchased"
+  size="md"
+>
+  <div className="space-y-6">
+    <div className="text-center">
+      <div className="w-16 h-16 bg-gradient-to-br from-nature-500 to-brand-500 rounded-3xl flex items-center justify-center mx-auto mb-4">
+        <Package className="w-8 h-8 text-white" />
+      </div>
+      <h3 className="text-lg font-lato font-bold text-warm-800 mb-2">
+        Confirm Purchase
+      </h3>
+      <p className="text-warm-600">
+        Mark "{selectedPledge?.itemTitle}" as purchased
+      </p>
+    </div>
+
+    {/* Optional Message */}
+    <div className="space-y-2">
+      <label className="block text-sm font-medium text-warm-700 font-inter">
+        Gift Message (Optional)
+      </label>
+      <textarea
+        rows={3}
+        placeholder="Add a personal message with your gift..."
+        value={purchaseMessage}
+        onChange={(e) => setPurchaseMessage(e.target.value)}
+        className="w-full px-4 py-3 rounded-2xl border-2 border-warm-200 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/20 bg-white/80 backdrop-blur-sm transition-all duration-300 focus:outline-none resize-none"
+      />
+    </div>
+
+    {/* Action Buttons */}
+    <div className="flex space-x-3 pt-4">
+      <Button 
+        variant="outline" 
+        className="flex-1"
+        onClick={() => setShowPurchaseModal(false)}
+      >
+        Cancel
+      </Button>
+      <Button 
+        variant="primary" 
+        className="flex-1"
+        onClick={() => selectedPledge && handleMarkAsPurchased(
+          selectedPledge.pledgeId, 
+          purchaseMessage || undefined
+        )}
+        rightIcon={<Check size={18} />}
+      >
+        Mark as Purchased
+      </Button>
+    </div>
+
+    {/* Info */}
+    <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+      <div className="flex items-start space-x-3">
+        <Package className="w-5 h-5 text-blue-500 mt-0.5" />
+        <div>
+          <h4 className="font-medium text-blue-800">Gift Tracking</h4>
+          <p className="text-sm text-blue-600 mt-1">
+            Once marked as purchased, the gift recipient will be notified. 
+            Your message will be revealed after their event date.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+    </Modal>
     </div>
   )
 }

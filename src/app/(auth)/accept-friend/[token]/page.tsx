@@ -1,3 +1,5 @@
+// REPLACE src/app/(auth)/accept-friend/[token]/page.tsx with this fixed version:
+
 'use client'
 
 import React, { useState, useEffect } from 'react'
@@ -12,17 +14,15 @@ import { UserPlus, Users, CheckCircle, XCircle, Gift, Clock, AlertTriangle } fro
 import toast from 'react-hot-toast'
 import Image from 'next/image';
 
-
 interface RequesterInfo {
   name: string
   email: string
   friendCode: string
-  avatarUrl?: string
 }
 
 interface FriendRequestData {
   requester: RequesterInfo
-  isValid: boolean
+  createdAt: string
   expiresAt: string
 }
 
@@ -61,8 +61,12 @@ export default function AcceptFriendPage() {
       setLoading(true)
       const data = await apiService.getFriendRequestInfo(token)
       
-      if (!data.isValid) {
-        setError('This friend request link is invalid or has expired, request for another one or hare with the your code')
+      // Check if the token has expired based on expiresAt
+      const now = new Date().getTime()
+      const expires = new Date(data.expiresAt).getTime()
+      
+      if (expires <= now) {
+        setError('This friend request link has expired. Please ask for a new one.')
       } else {
         setRequestData(data)
       }
@@ -118,6 +122,13 @@ export default function AcceptFriendPage() {
     }
     
     return `${minutes} minute${minutes > 1 ? 's' : ''} remaining`
+  }
+
+  const isTokenExpired = () => {
+    if (!requestData?.expiresAt) return false
+    const now = new Date().getTime()
+    const expires = new Date(requestData.expiresAt).getTime()
+    return expires <= now
   }
 
   if (authLoading || loading) {
@@ -202,6 +213,7 @@ export default function AcceptFriendPage() {
 
   const timeRemaining = getTimeRemaining()
   const isExpiring = timeRemaining?.includes('minute') || timeRemaining === 'Expired'
+  const expired = isTokenExpired()
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
@@ -236,7 +248,7 @@ export default function AcceptFriendPage() {
           </div>
 
           {/* Expiry Warning */}
-          {timeRemaining && timeRemaining !== 'Expired' && (
+          {timeRemaining && !expired && (
             <div className={`mb-6 p-3 rounded-xl border flex items-center space-x-2 ${
               isExpiring 
                 ? 'bg-red-50 border-red-200 text-red-700' 
@@ -251,18 +263,18 @@ export default function AcceptFriendPage() {
             </div>
           )}
 
+          {/* Expired Warning */}
+          {expired && (
+            <div className="mb-6 p-3 rounded-xl border bg-red-50 border-red-200 text-red-700 flex items-center space-x-2">
+              <XCircle className="w-4 h-4 flex-shrink-0" />
+              <span className="text-sm font-medium">This request has expired</span>
+            </div>
+          )}
+
           {/* Requester Info */}
           <div className="mb-8 p-6 bg-gradient-to-r from-brand-50 to-ocean-50 rounded-2xl border border-brand-200">
             <div className="w-16 h-16 rounded-full bg-gradient-to-br from-brand-400 to-ocean-400 flex items-center justify-center mx-auto mb-4 text-white font-bold text-xl shadow-lg">
-              {requestData.requester.avatarUrl ? (
-                <Image 
-                  src={requestData.requester.avatarUrl} 
-                  alt={requestData.requester.name}
-                  className="w-full h-full rounded-full object-cover"
-                />
-              ) : (
-                getInitials(requestData.requester.name)
-              )}
+              {getInitials(requestData.requester.name)}
             </div>
             <h3 className="text-xl font-lato font-bold text-warm-800 mb-2">
               {requestData.requester.name}
@@ -284,9 +296,9 @@ export default function AcceptFriendPage() {
               onClick={handleAccept}
               isLoading={accepting}
               leftIcon={<Users size={20} />}
-              disabled={timeRemaining === 'Expired'}
+              disabled={expired}
             >
-              {timeRemaining === 'Expired' ? 'Request Expired' : 'Accept Friend Request'}
+              {expired ? 'Request Expired' : 'Accept Friend Request'}
             </Button>
             
             <Button
@@ -296,7 +308,7 @@ export default function AcceptFriendPage() {
               onClick={handleDecline}
               disabled={accepting}
             >
-              Not Now
+              {expired ? 'Go Back' : 'Not Now'}
             </Button>
           </div>
 

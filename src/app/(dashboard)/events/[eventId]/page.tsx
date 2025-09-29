@@ -17,7 +17,6 @@ import {
   ArrowLeft,
   Plus,
   Eye,
-  Share2,
   MoreVertical
 } from 'lucide-react'
 
@@ -61,6 +60,23 @@ export default function EventDetailsPage() {
     }
   }
 
+  const handleDeleteEvent = async (eventId: number, eventTitle: string) => {
+    if (!confirm(`Are you sure you want to delete "${eventTitle}"? This will also delete all wishlist items and cannot be undone.`)) {
+      return
+    }
+
+    try {
+      await apiService.deleteEvent(eventId)
+      // Reload events list or redirect as needed
+      if (typeof loadEvents === 'function') {
+        await loadEvents() // For events page
+      } else {
+        router.push('/events') // For event details page
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to delete event')
+    }
+  }
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -122,6 +138,24 @@ export default function EventDetailsPage() {
             <h1 className="text-3xl font-lato font-black text-warm-800 mb-2 break-words">
               {event.title}
             </h1>
+            
+            {/* Show owner info if not owner */}
+            {!isOwner && event.owner && (
+              <div className="flex items-center space-x-2 mb-3">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-brand-400 to-ocean-400 flex items-center justify-center text-white font-bold text-sm">
+                  {event.owner.name.charAt(0).toUpperCase()}
+                </div>
+                <div>
+                  <p className="text-brand-600 font-semibold">
+                    {event.owner.name}'s Event
+                  </p>
+                  <p className="text-warm-500 text-sm">
+                    {event.owner.email}
+                  </p>
+                </div>
+              </div>
+            )}
+            
             <p className="text-warm-600 mb-1">
               {formatDate(event.eventDate)}
             </p>
@@ -129,25 +163,29 @@ export default function EventDetailsPage() {
               {event.eventType}
             </p>
           </div>
-
-          {/* Desktop Actions */}
+          
+          {/* Actions only for owners */}
           {isOwner && (
             <div className="hidden md:flex space-x-2 flex-shrink-0">
               <Button variant="ghost" size="sm" leftIcon={<Share2 size={16} />}>
                 Share
               </Button>
-              <Button variant="ghost" size="sm" leftIcon={<Edit3 size={16} />}>
-                Edit
-              </Button>
+              <Link href={`/events/${event.id}/edit`}>
+                <Button variant="ghost" size="sm" leftIcon={<Edit3 size={16} />}>
+                  Edit
+                </Button>
+              </Link>
               <Button 
                 variant="ghost" 
                 size="sm" 
                 leftIcon={<Trash2 size={16} />}
                 className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                onClick={() => handleDeleteEvent(event.id, event.title)}
               >
                 Delete
               </Button>
             </div>
+
           )}
 
           {/* Mobile Actions - Three Dots Menu */}
@@ -162,15 +200,13 @@ export default function EventDetailsPage() {
               
               {showActionsMenu && (
                 <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-2xl shadow-xl border border-warm-200 py-2 z-50">
-                  <button className="w-full flex items-center space-x-3 px-4 py-2 hover:bg-warm-50 transition-colors text-left">
-                    <Share2 size={16} className="text-brand-500" />
-                    <span className="text-warm-700">Share</span>
-                  </button>
-                  <button className="w-full flex items-center space-x-3 px-4 py-2 hover:bg-warm-50 transition-colors text-left">
-                    <Edit3 size={16} className="text-ocean-500" />
-                    <span className="text-warm-700">Edit</span>
-                  </button>
-                  <button className="w-full flex items-center space-x-3 px-4 py-2 hover:bg-red-50 transition-colors text-left">
+                  <Link  href={`/events/${event.id}/edit`}>
+                    <button className="w-full flex items-center space-x-3 px-4 py-2 hover:bg-warm-50 transition-colors text-left">
+                      <Edit3 size={16} className="text-ocean-500" />
+                      <span className="text-warm-700">Edit</span>
+                    </button>
+                  </Link>
+                  <button className="w-full flex items-center space-x-3 px-4 py-2 hover:bg-red-50 transition-colors text-left" onClick={() => handleDeleteEvent(event.id, event.title)}>
                     <Trash2 size={16} className="text-red-500" />
                     <span className="text-red-600">Delete</span>
                   </button>
@@ -319,12 +355,11 @@ export default function EventDetailsPage() {
               
               {isOwner && (
                 <>
-                  <Button variant="outline" size="sm" className="w-full justify-start" leftIcon={<Share2 size={16} />}>
-                    Share Event
-                  </Button>
-                  <Button variant="outline" size="sm" className="w-full justify-start" leftIcon={<Edit3 size={16} />}>
-                    Edit Event
-                  </Button>
+                  <Link  href={`/events/${event.id}/edit`} >
+                    <Button variant="outline" size="sm" className="w-full justify-start" leftIcon={<Edit3 size={16} />}>
+                      Edit Event
+                    </Button>
+                  </Link>
                 </>
               )}
             </div>

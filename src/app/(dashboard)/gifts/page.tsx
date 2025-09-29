@@ -14,7 +14,8 @@ import {
   User,
   Image as ImageIcon,
   MessageSquare,
-  Sparkles
+  Sparkles,
+  TrendingUp
 } from 'lucide-react'
 
 export default function GiftsPage() {
@@ -202,7 +203,7 @@ export default function GiftsPage() {
 
         {/* Header Tabs */}
         <div className="mt-4 md:mt-0">
-          <div className="flex bg-white/50 backdrop-blur-sm rounded-2xl p-1 border border-warm-200">
+          <div className="inline-flex bg-white/50 backdrop-blur-sm rounded-2xl p-1 border border-warm-200">
             {[
               { key: 'received', label: 'Received', icon: Heart },
               { key: 'given', label: 'Given', icon: GiftIcon }
@@ -210,7 +211,7 @@ export default function GiftsPage() {
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key as 'received' | 'given')}
-                className={`flex items-center space-x-2 px-4 py-2 rounded-xl font-inter font-semibold text-sm transition-all duration-200 ${
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl font-inter font-semibold text-sm transition-all duration-200 whitespace-nowrap ${
                   activeTab === tab.key
                     ? 'bg-gradient-to-r from-brand-500 to-brand-600 text-white shadow-md'
                     : 'text-warm-700 hover:text-brand-600 hover:bg-white/70'
@@ -222,9 +223,10 @@ export default function GiftsPage() {
             ))}
           </div>
         </div>
+
       </motion.div>
 
-      {/* Stats Cards */}
+      {/* Stats - Desktop: Grid, Mobile: Summary Card */}
       <AnimatePresence mode="wait">
         <motion.div
           key={activeTab}
@@ -232,73 +234,165 @@ export default function GiftsPage() {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -10 }}
           transition={{ duration: 0.2 }}
-          className="grid grid-cols-1 md:grid-cols-3 gap-6"
         >
-          {activeTab === 'received' ? (
-            <>
-              <Card className="p-6 text-center">
-                <div className="w-12 h-12 bg-gradient-to-br from-nature-500 to-nature-600 rounded-2xl flex items-center justify-center mx-auto mb-3">
-                  <Heart className="w-6 h-6 text-white" />
-                </div>
-                <h3 className="text-2xl font-lato font-black text-warm-800">
-                  {currentStats.total}
-                </h3>
-                <p className="text-sm text-warm-600 font-medium">Total Received</p>
-              </Card>
+          {/* Desktop Stats Grid */}
+          <div className="hidden md:grid grid-cols-1 md:grid-cols-3 gap-6">
+            {activeTab === 'received' ? (
+              <>
+                <Card className="p-6 text-center">
+                  <div className="w-12 h-12 bg-gradient-to-br from-nature-500 to-nature-600 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                    <Heart className="w-6 h-6 text-white" />
+                  </div>
+                  <h3 className="text-2xl font-lato font-black text-warm-800">
+                    {currentStats.total}
+                  </h3>
+                  <p className="text-sm text-warm-600 font-medium">Total Received</p>
+                </Card>
 
-              <Card className="p-6 text-center">
-                <div className="w-12 h-12 bg-gradient-to-br from-brand-500 to-brand-600 rounded-2xl flex items-center justify-center mx-auto mb-3">
-                  <Sparkles className="w-6 h-6 text-white" />
-                </div>
-                <h3 className="text-2xl font-lato font-black text-warm-800">
-                  {currentStats.revealed}
-                </h3>
-                <p className="text-sm text-warm-600 font-medium">Surprises Revealed</p>
-              </Card>
+                <Card className="p-6 text-center">
+                  <div className="w-12 h-12 bg-gradient-to-br from-brand-500 to-brand-600 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                    <Sparkles className="w-6 h-6 text-white" />
+                  </div>
+                  <h3 className="text-2xl font-lato font-black text-warm-800">
+                    {currentStats.revealed}
+                  </h3>
+                  <p className="text-sm text-warm-600 font-medium">Surprises Revealed</p>
+                </Card>
 
-              <Card className="p-6 text-center">
-                <div className="w-12 h-12 bg-gradient-to-br from-ocean-500 to-ocean-600 rounded-2xl flex items-center justify-center mx-auto mb-3">
-                  <Package className="w-6 h-6 text-white" />
-                </div>
-                <h3 className="text-2xl font-lato font-black text-warm-800">
-                  {currentStats.awaiting}
-                </h3>
-                <p className="text-sm text-warm-600 font-medium">Awaiting Surprise</p>
-              </Card>
-            </>
-          ) : (
-            <>
-              <Card className="p-6 text-center">
-                <div className="w-12 h-12 bg-gradient-to-br from-brand-500 to-brand-600 rounded-2xl flex items-center justify-center mx-auto mb-3">
-                  <GiftIcon className="w-6 h-6 text-white" />
-                </div>
-                <h3 className="text-2xl font-lato font-black text-warm-800">
-                  {currentStats.total}
-                </h3>
-                <p className="text-sm text-warm-600 font-medium">Total Given</p>
-              </Card>
+                <Card className="p-6 text-center">
+                  <div className="w-12 h-12 bg-gradient-to-br from-ocean-500 to-ocean-600 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                    <Package className="w-6 h-6 text-white" />
+                  </div>
+                  <h3 className="text-2xl font-lato font-black text-warm-800">
+                    {currentStats.awaiting}
+                  </h3>
+                  <p className="text-sm text-warm-600 font-medium">Awaiting Surprise</p>
+                </Card>
+              </>
+            ) : (
+              <>
+                <Card className="p-6 text-center">
+                  <div className="w-12 h-12 bg-gradient-to-br from-brand-500 to-brand-600 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                    <GiftIcon className="w-6 h-6 text-white" />
+                  </div>
+                  <h3 className="text-2xl font-lato font-black text-warm-800">
+                    {currentStats.total}
+                  </h3>
+                  <p className="text-sm text-warm-600 font-medium">Total Given</p>
+                </Card>
 
-              <Card className="p-6 text-center">
-                <div className="w-12 h-12 bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-2xl flex items-center justify-center mx-auto mb-3">
-                  <Heart className="w-6 h-6 text-white" />
-                </div>
-                <h3 className="text-2xl font-lato font-black text-warm-800">
-                  {currentStats.pledged}
-                </h3>
-                <p className="text-sm text-warm-600 font-medium">Pledged</p>
-              </Card>
+                <Card className="p-6 text-center">
+                  <div className="w-12 h-12 bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                    <Heart className="w-6 h-6 text-white" />
+                  </div>
+                  <h3 className="text-2xl font-lato font-black text-warm-800">
+                    {currentStats.pledged}
+                  </h3>
+                  <p className="text-sm text-warm-600 font-medium">Pledged</p>
+                </Card>
 
-              <Card className="p-6 text-center">
-                <div className="w-12 h-12 bg-gradient-to-br from-nature-500 to-nature-600 rounded-2xl flex items-center justify-center mx-auto mb-3">
-                  <Package className="w-6 h-6 text-white" />
-                </div>
-                <h3 className="text-2xl font-lato font-black text-warm-800">
-                  {currentStats.purchased}
+                <Card className="p-6 text-center">
+                  <div className="w-12 h-12 bg-gradient-to-br from-nature-500 to-nature-600 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                    <Package className="w-6 h-6 text-white" />
+                  </div>
+                  <h3 className="text-2xl font-lato font-black text-warm-800">
+                    {currentStats.purchased}
+                  </h3>
+                  <p className="text-sm text-warm-600 font-medium">Purchased</p>
+                </Card>
+              </>
+            )}
+          </div>
+
+          {/* Mobile Summary Card */}
+          <div className="md:hidden">
+            <Card className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-lato font-bold text-warm-800 flex items-center">
+                  <TrendingUp className="w-5 h-5 mr-3 text-brand-500" />
+                  {activeTab === 'received' ? 'Received Summary' : 'Given Summary'}
                 </h3>
-                <p className="text-sm text-warm-600 font-medium">Purchased</p>
-              </Card>
-            </>
-          )}
+              </div>
+              
+              {activeTab === 'received' ? (
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="text-center">
+                    <div className="w-8 h-8 bg-gradient-to-br from-nature-500 to-nature-600 rounded-xl flex items-center justify-center mx-auto mb-2">
+                      <Heart className="w-4 h-4 text-white" />
+                    </div>
+                    <p className="text-xl font-lato font-black text-warm-800 leading-none">
+                      {currentStats.total}
+                    </p>
+                    <p className="text-xs font-inter font-semibold text-warm-600 leading-tight">
+                      Total
+                    </p>
+                  </div>
+                  
+                  <div className="text-center">
+                    <div className="w-8 h-8 bg-gradient-to-br from-brand-500 to-brand-600 rounded-xl flex items-center justify-center mx-auto mb-2">
+                      <Sparkles className="w-4 h-4 text-white" />
+                    </div>
+                    <p className="text-xl font-lato font-black text-warm-800 leading-none">
+                      {currentStats.revealed}
+                    </p>
+                    <p className="text-xs font-inter font-semibold text-warm-600 leading-tight">
+                      Revealed
+                    </p>
+                  </div>
+                  
+                  <div className="text-center">
+                    <div className="w-8 h-8 bg-gradient-to-br from-ocean-500 to-ocean-600 rounded-xl flex items-center justify-center mx-auto mb-2">
+                      <Package className="w-4 h-4 text-white" />
+                    </div>
+                    <p className="text-xl font-lato font-black text-warm-800 leading-none">
+                      {currentStats.awaiting}
+                    </p>
+                    <p className="text-xs font-inter font-semibold text-warm-600 leading-tight">
+                      Awaiting
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="text-center">
+                    <div className="w-8 h-8 bg-gradient-to-br from-brand-500 to-brand-600 rounded-xl flex items-center justify-center mx-auto mb-2">
+                      <GiftIcon className="w-4 h-4 text-white" />
+                    </div>
+                    <p className="text-xl font-lato font-black text-warm-800 leading-none">
+                      {currentStats.total}
+                    </p>
+                    <p className="text-xs font-inter font-semibold text-warm-600 leading-tight">
+                      Total
+                    </p>
+                  </div>
+                  
+                  <div className="text-center">
+                    <div className="w-8 h-8 bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-xl flex items-center justify-center mx-auto mb-2">
+                      <Heart className="w-4 h-4 text-white" />
+                    </div>
+                    <p className="text-xl font-lato font-black text-warm-800 leading-none">
+                      {currentStats.pledged}
+                    </p>
+                    <p className="text-xs font-inter font-semibold text-warm-600 leading-tight">
+                      Pledged
+                    </p>
+                  </div>
+                  
+                  <div className="text-center">
+                    <div className="w-8 h-8 bg-gradient-to-br from-nature-500 to-nature-600 rounded-xl flex items-center justify-center mx-auto mb-2">
+                      <Package className="w-4 h-4 text-white" />
+                    </div>
+                    <p className="text-xl font-lato font-black text-warm-800 leading-none">
+                      {currentStats.purchased}
+                    </p>
+                    <p className="text-xs font-inter font-semibold text-warm-600 leading-tight">
+                      Purchased
+                    </p>
+                  </div>
+                </div>
+              )}
+            </Card>
+          </div>
         </motion.div>
       </AnimatePresence>
 
