@@ -57,9 +57,7 @@ interface WishlistData {
   }
   items: WishlistItem[]
 }
-export async function generateStaticParams() {
-  return [];
-}
+
 export default function WishlistPage() {
   const router = useRouter()
   const params=useParams()

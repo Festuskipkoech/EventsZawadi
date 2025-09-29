@@ -22,9 +22,7 @@ import {
   TrendingUp
 } from 'lucide-react'
 import toast from 'react-hot-toast'
-export async function generateStaticParams() {
-  return [];
-}
+
 export default function EventDetailsPage() {
   const params = useParams()
   const router = useRouter()
